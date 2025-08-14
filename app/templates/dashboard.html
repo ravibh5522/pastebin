@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - {{ user.username }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <span class="user-info">Hello, {{ user.username }}</span>
+                <a href="/" class="button secondary">New Paste</a>
+                <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                    <button type="submit" class="button logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="dashboard-section">
+                <h2>My Pastes</h2>
+                {% if user_pastes %}
+                    <div class="paste-grid">
+                        {% for paste in user_pastes %}
+                        <div class="paste-card">
+                            <div class="paste-header">
+                                <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                                <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                            <div class="paste-preview">
+                                {% if paste.content %}
+                                    <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
+                                {% endif %}
+                                {% if paste.filenames %}
+                                    <div class="file-count">
+                                        📎 {{ paste.filenames.split(',') | length }} file(s)
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>You haven't created any pastes yet.</p>
+                        <a href="/" class="button">Create Your First Paste</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="dashboard-section">
+                <h2>Saved Pastes</h2>
+                {% if saved_pastes %}
+                    <div class="paste-grid">
+                        {% for saved_paste in saved_pastes %}
+                        {% set paste = saved_paste.paste %}
+                        <div class="paste-card">
+                            <div class="paste-header">
+                                <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                                <div class="paste-meta">
+                                    {% if paste.owner %}
+                                        <span class="paste-owner">by {{ paste.owner.username }}</span>
+                                    {% else %}
+                                        <span class="paste-owner">by Anonymous</span>
+                                    {% endif %}
+                                    <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d') }}</span>
+                                </div>
+                            </div>
+                            <div class="paste-preview">
+                                {% if paste.content %}
+                                    <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
+                                {% endif %}
+                                {% if paste.filenames %}
+                                    <div class="file-count">
+                                        📎 {{ paste.filenames.split(',') | length }} file(s)
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p>You haven't saved any pastes yet.</p>
+                        <p>Click the save button on any paste to add it to your collection.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .dashboard-content {
+            margin-top: 2rem;
+        }
+        
+        .dashboard-section {
+            margin-bottom: 3rem;
+        }
+        
+        .dashboard-section h2 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .paste-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .paste-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .paste-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .paste-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .paste-title {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .paste-title:hover {
+            text-decoration: underline;
+        }
+        
+        .paste-date {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .paste-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+        
+        .paste-owner {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .paste-preview {
+            color: var(--text-secondary);
+        }
+        
+        .paste-preview pre {
+            font-size: 0.85rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .file-count {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--accent-green);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+        
+        .user-info {
+            color: var(--text-primary);
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .paste-header {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .paste-meta {
+                align-items: flex-start;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  pastebin:
+    build: .
+    container_name: pastebin-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data          # Database persistence
+      - ./uploads:/app/uploads    # File uploads persistence
+      - ./logs:/app/logs          # Logs (optional)
+    environment:
+      - PYTHONPATH=/app
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/pastes.db}
+      - MAX_FILES=${MAX_FILES:-5}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
+      - AUTO_DELETE_DAYS=${AUTO_DELETE_DAYS:-5}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pastebin-network
+
+  # Optional: Add nginx for production
+  nginx:
+    image: nginx:alpine
+    container_name: pastebin-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl/certs:ro  # SSL certificates (optional)
+    depends_on:
+      - pastebin
+    networks:
+      - pastebin-network
+    profiles:
+      - production  # Only start with --profile production
+
+networks:
+  pastebin-network:
+    driver: bridge
+
+volumes:
+  pastebin-data:
+    driver: local

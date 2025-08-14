@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste - {{ paste.slug }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- Syntax Highlighting for main paste -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    
+    <!-- CodeMirror 6 (In-browser editor) Assets -->
+    <script src="https://unpkg.com/codemirror@6.0.1/dist/index.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/codemirror@6.0.1/lib/codemirror.css">
+    <script src="https://unpkg.com/@codemirror/view@6.26.3/dist/index.min.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-javascript@6.2.2/dist/index.min.js"></script>
+    <script src="https://unpkg.com/@codemirror/theme-one-dark@6.1.2/dist/index.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                {% if current_user %}
+                    <button id="save-btn" class="button {% if is_saved %}saved{% else %}secondary{% endif %}" 
+                            data-paste-id="{{ paste.id }}" 
+                            data-saved="{{ is_saved|lower }}">
+                        {% if is_saved %}❤️ Saved{% else %}🤍 Save{% endif %}
+                    </button>
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                    <span class="user-info">{{ current_user.username }}</span>
+                    <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                        <button type="submit" class="button logout">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="/login" class="button secondary">Login to Save</a>
+                {% endif %}
+                <button id="copy-btn" class="button secondary">Copy URL</button>
+                <a href="/" class="button">New Paste</a>
+            </div>
+        </div>
+
+        {% if paste.content %}
+            <h2>Text Content</h2>
+            <!-- Note: no language class, so highlight.js auto-detects -->
+            <pre><code>{{ paste.content }}</code></pre>
+        {% endif %}
+
+        {% if files_data %}
+            <h2>Attached Files</h2>
+            <div class="card-grid">
+                {% for file in files_data %}
+                <div class="file-card">
+                    <div class="card-preview">
+                        {% if file.is_image %}
+                            <img src="/uploads/{{ paste.slug }}/{{ file.name }}" alt="Preview of {{ file.name }}">
+                        {% else %}
+                            <div class="icon-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V8H3ZM21 4C21 2.89543 20.1046 2 19 2H5C3.89543 2 3 2.89543 3 4V6H21V4Z"></path></svg>
+                                <span>{{ file.name.split('.')[-1] | upper }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <span class="filename" title="{{ file.name }}">{{ file.name }}</span>
+                        <div class="card-actions">
+                            <!-- VVV NEW: Conditional View Button VVV -->
+                            {% if file.is_editable %}
+                            <button class="view-btn" data-slug="{{ paste.slug }}" data-filename="{{ file.name }}" title="View & Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C17.5228 3 22 7.47715 22 12C22 16.5228 17.5228 21 12 21C6.47715 21 2 16.5228 2 12C2 7.47715 6.47715 3 12 3ZM12 19C16.4183 19 20 15.4183 20 11C20 6.58172 16.4183 3 12 3C7.58172 3 4 6.58172 4 11C4 15.4183 7.58172 19 12 19ZM12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z"></path></svg>
+                            </button>
+                            {% endif %}
+                            <a href="/uploads/{{ paste.slug }}/{{ file.name }}" class="download-btn" download title="Download">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16L6 10H10V4H14V10H18L12 16ZM4 18V20H20V18H4Z"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- VVV NEW: Editor Modal HTML (hidden by default) VVV -->
+    <div id="editor-modal-overlay" class="modal-overlay"></div>
+    <div id="editor-modal" class="modal">
+        <div class="modal-header">
+            <h3 id="modal-title"></h3>
+            <button id="modal-close-btn" class="modal-close-btn">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="editor-container"></div>
+        </div>
+        <div class="modal-footer">
+            <button id="modal-copy-btn" class="button secondary">Copy Code</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // --- 1. Main Page Logic ---
+        hljs.highlightAll(); // Auto-detects language in main paste
+
+        const copyBtn = document.getElementById('copy-btn');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                copyBtn.textContent = 'Copied!';
+                copyBtn.style.backgroundColor = 'var(--accent-green)';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy URL';
+                    copyBtn.style.backgroundColor = '';
+                }, 2000);
+            });
+        });
+
+        // --- Save/Unsave functionality ---
+        const saveBtn = document.getElementById('save-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async () => {
+                const pasteId = saveBtn.dataset.pasteId;
+                const currentlySaved = saveBtn.dataset.saved === 'true';
+                
+                try {
+                    const response = await fetch(`/save-paste/${pasteId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        saveBtn.dataset.saved = result.saved.toString();
+                        
+                        if (result.saved) {
+                            saveBtn.innerHTML = '❤️ Saved';
+                            saveBtn.className = 'button saved';
+                        } else {
+                            saveBtn.innerHTML = '🤍 Save';
+                            saveBtn.className = 'button secondary';
+                        }
+                    } else {
+                        throw new Error('Failed to save/unsave paste');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error saving paste. Please try again.');
+                }
+            });
+        }
+
+        // --- 2. Modal Editor Logic ---
+        const modalOverlay = document.getElementById('editor-modal-overlay');
+        const modal = document.getElementById('editor-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCopyBtn = document.getElementById('modal-copy-btn');
+        const editorContainer = document.getElementById('editor-container');
+        
+        let editorView = null; // To hold the CodeMirror instance
+
+        function showModal() {
+            modal.style.display = 'flex';
+            modalOverlay.style.display = 'block';
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+            modalOverlay.style.display = 'none';
+            if (editorView) {
+                editorView.destroy(); // Clean up the editor instance
+                editorView = null;
+            }
+            editorContainer.innerHTML = ''; // Clear container
+        }
+
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
+
+        document.querySelectorAll('.view-btn').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const { slug, filename } = event.currentTarget.dataset;
+                modalTitle.textContent = 'Loading...';
+                showModal();
+
+                try {
+                    const response = await fetch(`/content/${slug}/${filename}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load file: ${response.statusText}`);
+                    }
+                    const code = await response.text();
+                    
+                    modalTitle.textContent = filename;
+
+                    // Initialize CodeMirror
+                    const { EditorState } = CM.state;
+                    const { EditorView, keymap } = CM.view;
+                    const { javascript } = CM.lang_javascript; // Default language, can be extended
+                    const { oneDark } = CM.theme_one_dark;
+                    
+                    editorView = new EditorView({
+                        doc: code,
+                        extensions: [
+                            EditorView.lineWrapping,
+                            oneDark,
+                            javascript() // Use a specific language or a general setup
+                        ],
+                        parent: editorContainer,
+                    });
+
+                } catch (error) {
+                    modalTitle.textContent = 'Error';
+                    editorContainer.innerHTML = `<p style="color: #ff757f;">${error.message}</p>`;
+                }
+            });
+        });
+
+        modalCopyBtn.addEventListener('click', () => {
+            if (editorView) {
+                const textToCopy = editorView.state.doc.toString();
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    modalCopyBtn.textContent = 'Copied!';
+                    setTimeout(() => { modalCopyBtn.textContent = 'Copy Code'; }, 2000);
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .user-info {
+            color: var(--text-primary);
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        .saved {
+            background: var(--accent-green) !important;
+            border-color: var(--accent-green) !important;
+        }
+        
+        .saved:hover {
+            background: #4ade80 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+    
+    <script>
+        // Handle logout to clear local storage
+        const logoutForm = document.getElementById('logoutForm');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', function() {
+                localStorage.removeItem('pastebin_session');
+            });
+        }
+    </script>
+</body>
+</html>

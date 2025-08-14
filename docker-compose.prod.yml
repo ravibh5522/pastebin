@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: pastebin
+      POSTGRES_USER: pastebin_user
+      POSTGRES_PASSWORD: your_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - pastebin-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pastebin_user -d pastebin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - pastebin-network
+    volumes:
+      - redis_data:/data
+
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://pastebin_user:your_secure_password@db:5432/pastebin
+      SECRET_KEY: your-production-secret-key-make-it-very-long-and-random
+      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      AUTO_DELETE_DAYS: 5
+      HOST: 0.0.0.0
+      PORT: 8000
+      WORKERS: 2
+    volumes:
+      - uploads:/app/uploads
+      - data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pastebin-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploads:/var/www/uploads:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - pastebin-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:
+  data:
+  nginx_logs:
+
+networks:
+  pastebin-network:
+    driver: bridge

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste Shaver - New Paste</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                {% if current_user %}
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                    <span class="user-info">{{ current_user.username }}</span>
+                    <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                        <button type="submit" class="button logout">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <form action="/create" method="post" enctype="multipart/form-data">
+            <h2>Text Content</h2>
+            <textarea name="content" id="content" placeholder="Paste your text or code here... (optional if uploading files)"></textarea>
+
+            <h2>File Attachments</h2>
+            <label for="files" class="file-upload-area">
+                <p>Click or Drag to Upload Files</p>
+                <span>Max {{ max_files }} files, up to {{ max_size }}MB each</span>
+            </label>
+            <input type="file" name="files" id="files" multiple>
+            <div id="file-info"></div>
+
+            <button type="submit">Create Paste</button>
+        </form>
+        
+        {% if current_user %}
+        <div class="user-note">
+            <p>✨ Your pastes will be saved to your account and visible in your <a href="/dashboard">dashboard</a>.</p>
+        </div>
+        {% else %}
+        <div class="user-note">
+            <p>💡 <a href="/signup">Create an account</a> to save your pastes and access them later!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .user-info {
+            color: var(--text-primary);
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        .user-note {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .user-note p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        
+        .user-note a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        
+        .user-note a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+    <script src="/static/session.js"></script>
+    <script>
+        const fileInput = document.getElementById('files');
+        const fileInfo = document.getElementById('file-info');
+
+        fileInput.addEventListener('change', () => {
+            const numFiles = fileInput.files.length;
+            if (numFiles > 0) {
+                fileInfo.textContent = `${numFiles} file(s) selected.`;
+            } else {
+                fileInfo.textContent = '';
+            }
+        });
+    </script>
+</body>
+</html>

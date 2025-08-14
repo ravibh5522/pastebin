@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+
+:root {
+    --bg-dark: #1a1b26;
+    --bg-med: #24283b;
+    --bg-light: #414868;
+    --fg: #c0caf5;
+    --fg-dim: #a9b1d6;
+    --accent-blue: #7aa2f7;
+    --accent-green: #9ece6a;
+    --accent-purple: #bb9af7;
+    --border-color: #3b4048;
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'Fira Code', monospace;
+}
+/* ... (existing styles for body, container, header, h2, buttons, form, etc. remain the same) ... */
+body {
+    background-color: var(--bg-dark);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 2rem 1rem;
+    line-height: 1.6;
+}
+.container { max-width: 900px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.logo a, .logo { color: var(--accent-blue); text-decoration: none; font-size: 1.8rem; font-weight: 700; }
+.actions .button { margin-left: 10px; }
+h2 { color: var(--accent-green); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2.5rem; margin-bottom: 1.5rem; }
+.button, button { background-color: var(--accent-blue); color: var(--bg-dark); border: none; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; border-radius: 6px; text-decoration: none; text-align: center; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-block; }
+.button:hover, button:hover { background-color: #5d87d4; transform: translateY(-2px); }
+.button.secondary { background-color: var(--bg-light); color: var(--fg); }
+.button.secondary:hover { background-color: #565f89; }
+form { display: flex; flex-direction: column; }
+textarea { width: 100%; min-height: 300px; background-color: var(--bg-med); border: 1px solid var(--border-color); color: var(--fg); padding: 1rem; font-family: var(--font-mono); font-size: 0.95rem; border-radius: 6px; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; }
+textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.3); }
+.file-upload-area { border: 2px dashed var(--bg-light); border-radius: 6px; padding: 2rem; text-align: center; cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease; }
+.file-upload-area:hover { background-color: var(--bg-med); border-color: var(--accent-purple); }
+.file-upload-area p { margin: 0; font-weight: 600; color: var(--accent-purple); }
+.file-upload-area span { display: block; font-size: 0.9rem; color: var(--bg-light); }
+#file-info { margin-top: 1rem; font-style: italic; color: var(--accent-green); }
+#files { display: none; }
+pre code.hljs { padding: 1.5em; border-radius: 6px; background: var(--bg-med); border: 1px solid var(--border-color); white-space: pre-wrap; word-wrap: break-word; }
+
+/* --- Card Grid Styles (Updated) --- */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+.file-card { background-color: var(--bg-med); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.file-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); }
+.card-preview { width: 100%; aspect-ratio: 4 / 3; background-color: var(--bg-dark); display: flex; align-items: center; justify-content: center; }
+.card-preview img { width: 100%; height: 100%; object-fit: cover; }
+.icon-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--bg-light); }
+.icon-placeholder svg { width: 48px; height: 48px; margin-bottom: 0.5rem; }
+.icon-placeholder span { font-family: var(--font-mono); font-weight: bold; font-size: 1.2rem; color: var(--fg-dim); }
+.card-footer { padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border-top: 1px solid var(--border-color); }
+.filename { font-size: 0.9rem; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+.card-actions { display: flex; align-items: center; gap: 0.5rem; }
+.download-btn, .view-btn { color: var(--accent-green); background: none; border: none; padding: 5px; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
+.download-btn:hover, .view-btn:hover { background-color: var(--bg-light); }
+.view-btn { color: var(--accent-purple); } /* Differentiate view button */
+.view-btn svg, .download-btn svg { width: 20px; height: 20px; }
+
+/* --- NEW: Editor Modal Styles --- */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 1000; }
+.modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; max-width: 900px; height: 80vh; background-color: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1001; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); flex-direction: column; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); }
+.modal-header h3 { margin: 0; color: var(--accent-blue); }
+.modal-close-btn { background: none; border: none; font-size: 2rem; color: var(--fg-dim); cursor: pointer; line-height: 1; padding: 0; }
+.modal-body { flex-grow: 1; overflow: hidden; }
+#editor-container { height: 100%; }
+.cm-editor { height: 100% !important; font-size: 15px; } /* CodeMirror override */
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); text-align: right; }
