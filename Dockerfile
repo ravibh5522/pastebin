@@ -1,52 +1,54 @@
-# Use Python 3.11 slim image as base
-FROM python:3.11-slim
+# Use official Python runtime as base image
+FROM python:3.12-slim
 
-# Set environment variables
+# Set environment variables for Google Cloud
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH="/app"
+ENV PYTHONPATH=/app
+ENV PORT=8000
+ENV HOST=0.0.0.0
 
-# Set work directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        gcc \
-        g++ \
-        libffi-dev \
-        libssl-dev \
-    && apt-get clean \
+# Install system dependencies required for document processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libffi-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libjpeg-dev \
+    libpng-dev \
+    zlib1g-dev \
+    curl \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
 
 # Copy requirements first for better caching
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create directories for uploads and database
-RUN mkdir -p uploads \
-    && mkdir -p app \
-    && chmod 755 uploads
+# Create necessary directories
+RUN mkdir -p temp outputs logs examples
 
-# Create a non-root user
-RUN useradd --create-home --shell /bin/bash pastebin \
-    && chown -R pastebin:pastebin /app
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
 
-# Switch to non-root user
-USER pastebin
-
-# Expose port
+# Expose port (Google Cloud Run uses PORT env var)
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/session-status || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application with dynamic port
+CMD uvicorn app.main:app --host $HOST --port $PORT

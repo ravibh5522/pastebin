@@ -1,0 +1,23 @@
+{
+  "candidate_name": "John Doe",
+  "position": "Senior Software Engineer",
+  "department": "Engineering",
+  "salary": "₹18,00,000",
+  "annual_salary": "₹18,00,000",
+  "start_date": "February 1, 2024",
+  "company_name": "TechCorp Solutions Pvt. Ltd.",
+  "company_address": "123 Tech Park, Bangalore, Karnataka 560001",
+  "reporting_manager": "Jane Smith",
+  "manager_designation": "Engineering Manager",
+  "hr_contact": "HR Team",
+  "hr_email": "hr@techcorp.com",
+  "hr_phone": "+91-80-1234-5678",
+  "employment_type": "Full Time",
+  "probation_period": "6 months",
+  "notice_period": "30 days",
+  "working_hours": "9:00 AM to 6:00 PM",
+  "working_days": "Monday to Friday",
+  "benefits": "Health Insurance, Provident Fund, Flexible Working Hours",
+  "date": "January 15, 2024",
+  "offer_valid_till": "January 30, 2024"
+}
