@@ -57,6 +57,15 @@ def get_current_user_from_token(credentials: Optional[HTTPAuthorizationCredentia
     user = crud.get_user_by_username(db, username=username)
     return user
 
+def get_user_from_token_string(token: str, db: Session):
+    """Get user from token string (for WebSocket authentication)"""
+    username = verify_token(token)
+    if username is None:
+        return None
+    
+    user = crud.get_user_by_username(db, username=username)
+    return user
+
 def get_current_user_from_request(request: Request, db: Session = Depends(get_db)):
     """Get current user from session cookie (optional)"""
     token = request.cookies.get("access_token")

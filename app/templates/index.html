@@ -11,7 +11,9 @@
         <div class="header">
             <h1 class="logo"><a href="/">Paste Shaver</a></h1>
             <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
                 {% if current_user %}
+                    <a href="/chat" class="button secondary">Chat</a>
                     <a href="/dashboard" class="button secondary">Dashboard</a>
                     <span class="user-info">{{ current_user.username }}</span>
                     <form action="/logout" method="post" style="display: inline;" id="logoutForm">

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Pastes - Paste Shaver</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                {% if current_user %}
+                    <span class="user-info">Hello, {{ current_user.username }}</span>
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                    <a href="/" class="button secondary">New Paste</a>
+                    <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                        <button type="submit" class="button logout">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="search-page-content">
+            <div class="search-header">
+                <h2>Search All Pastes</h2>
+                <form method="get" action="/search" class="search-form">
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            placeholder="Search all pastes by title or content..." 
+                            value="{{ search_query }}"
+                            class="search-input"
+                            autofocus
+                        >
+                        <button type="submit" class="search-button">Search</button>
+                        {% if search_query %}
+                            <a href="/search" class="clear-search">Clear</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            
+            {% if search_query %}
+                <div class="search-results-section">
+                    <h3>Search Results for "{{ search_query }}"</h3>
+                    {% if search_results %}
+                        <div class="paste-grid">
+                            {% for paste in search_results %}
+                            <div class="paste-card">
+                                <div class="paste-header">
+                                    <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                                    <div class="paste-meta">
+                                        {% if paste.owner %}
+                                            <span class="paste-owner">by {{ paste.owner.username }}</span>
+                                        {% else %}
+                                            <span class="paste-owner">by Anonymous</span>
+                                        {% endif %}
+                                        <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    </div>
+                                </div>
+                                <div class="paste-preview">
+                                    {% if paste.content %}
+                                        <pre>{{ paste.content[:150] }}{% if paste.content|length > 150 %}...{% endif %}</pre>
+                                    {% endif %}
+                                    {% if paste.filenames %}
+                                        <div class="file-count">
+                                            📎 {{ paste.filenames.split(',') | length }} file(s)
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if current_user %}
+                                    <div class="paste-actions">
+                                        <button class="save-btn" data-paste-id="{{ paste.id }}">
+                                            💾 Save
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No pastes found matching "{{ search_query }}".</p>
+                            <p>Try a different search term or <a href="/search">browse all pastes</a>.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="search-help">
+                    <h3>How to Search</h3>
+                    <ul>
+                        <li>Search by paste title (slug) or content</li>
+                        <li>Use keywords to find relevant pastes</li>
+                        <li>Search is case-insensitive</li>
+                        <li>Results are ordered by creation date (newest first)</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .search-page-content {
+            margin-top: 2rem;
+        }
+        
+        .search-header {
+            margin-bottom: 2rem;
+        }
+        
+        .search-header h2 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-form {
+            width: 100%;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            max-width: 800px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .search-button {
+            padding: 1rem 2rem;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .search-button:hover {
+            background: #0056b3;
+        }
+        
+        .clear-search {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .clear-search:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .search-results-section {
+            margin-top: 3rem;
+        }
+        
+        .search-results-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .paste-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .paste-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .paste-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .paste-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .paste-title {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .paste-title:hover {
+            text-decoration: underline;
+        }
+        
+        .paste-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+        
+        .paste-owner {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .paste-date {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .paste-preview {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .paste-preview pre {
+            font-size: 0.85rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .file-count {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--accent-green);
+        }
+        
+        .paste-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .save-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .save-btn:hover {
+            background: #28a745;
+        }
+        
+        .save-btn.saved {
+            background: #dc3545;
+        }
+        
+        .save-btn.saved:hover {
+            background: #c82333;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+        
+        .search-help {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .search-help h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .search-help ul {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .search-help li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .search-container {
+                flex-direction: column;
+                max-width: none;
+            }
+            
+            .search-input {
+                width: 100%;
+            }
+            
+            .search-button {
+                width: 100%;
+            }
+            
+            .paste-header {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .paste-meta {
+                align-items: flex-start;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+    <script>
+        // Enhanced search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('.search-input');
+            
+            // Focus search with Ctrl+F or Cmd+F
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+                
+                // Clear search with Escape when focused on search input
+                if (e.key === 'Escape' && document.activeElement === searchInput) {
+                    if (searchInput.value) {
+                        searchInput.value = '';
+                        // Submit form to clear results
+                        searchInput.closest('form').submit();
+                    }
+                }
+            });
+            
+            // Save paste functionality
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const pasteId = this.dataset.pasteId;
+                    
+                    try {
+                        const response = await fetch(`/save-paste/${pasteId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.saved) {
+                                this.textContent = '❤️ Saved';
+                                this.classList.add('saved');
+                            } else {
+                                this.textContent = '💾 Save';
+                                this.classList.remove('saved');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error saving paste:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Group - Paste Shaver</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                <a href="/dashboard" class="button secondary">Dashboard</a>
+                <a href="/chat" class="button secondary">Chat</a>
+                <span class="user-info">Hello, {{ current_user.username }}</span>
+                <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                    <button type="submit" class="button logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Create New Group</h2>
+                <p>Start a new group chat for you and your friends</p>
+            </div>
+            
+            <form method="post" action="/chat/create-group" class="form">
+                <div class="form-group">
+                    <label for="name">Group Name *</label>
+                    <input type="text" id="name" name="name" required maxlength="100" 
+                           placeholder="Enter group name" autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" 
+                              placeholder="Enter group description (optional)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_private" value="true">
+                        <span class="checkmark"></span>
+                        Private Group (requires invite code to join)
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="/chat" class="button secondary">Cancel</a>
+                    <button type="submit" class="button">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .form-header h2 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-header p {
+            color: var(--text-secondary);
+        }
+        
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 0.75rem;
+            transform: scale(1.2);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .form-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

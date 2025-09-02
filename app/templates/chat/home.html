@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Paste Shaver</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                <a href="/dashboard" class="button secondary">Dashboard</a>
+                <a href="/chat" class="button secondary active">Chat</a>
+                <span class="user-info">Hello, {{ current_user.username }}</span>
+                <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                    <button type="submit" class="button logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="chat-home-content">
+            <div class="chat-header">
+                <h2>Group Chat</h2>
+                <div class="chat-actions">
+                    <a href="/chat/create" class="button">Create Group</a>
+                    <a href="/chat/join" class="button secondary">Join Group</a>
+                </div>
+            </div>
+            
+            <div class="groups-section">
+                {% if groups %}
+                    <div class="groups-grid">
+                        {% for group in groups %}
+                        <div class="group-card">
+                            <div class="group-header">
+                                <h3><a href="/chat/group/{{ group.id }}" class="group-name">{{ group.name }}</a></h3>
+                                {% if group.is_private %}
+                                    <span class="group-badge private">🔒 Private</span>
+                                {% else %}
+                                    <span class="group-badge public">🌐 Public</span>
+                                {% endif %}
+                            </div>
+                            <div class="group-description">
+                                {{ group.description or "No description" }}
+                            </div>
+                            <div class="group-meta">
+                                <span class="group-date">Created {{ group.created_at.strftime('%Y-%m-%d') }}</span>
+                                {% if group.creator_id == current_user.id %}
+                                    <span class="group-role">Owner</span>
+                                {% endif %}
+                            </div>
+                            <div class="group-actions">
+                                <a href="/chat/group/{{ group.id }}" class="button small">Enter Chat</a>
+                                {% if group.creator_id != current_user.id %}
+                                    <form method="post" action="/chat/leave-group/{{ group.id }}" style="display: inline;">
+                                        <button type="submit" class="button small danger" onclick="return confirm('Are you sure you want to leave this group?')">Leave</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No Groups Yet</h3>
+                        <p>Create a new group or join an existing one to start chatting!</p>
+                        <div class="empty-actions">
+                            <a href="/chat/create" class="button">Create Your First Group</a>
+                            <a href="/chat/join" class="button secondary">Join a Group</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .chat-home-content {
+            margin-top: 2rem;
+        }
+        
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .chat-header h2 {
+            color: var(--fg);
+        }
+        
+        .chat-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        
+        .group-card {
+            background: var(--bg-med);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .group-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .group-name {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .group-name:hover {
+            text-decoration: underline;
+        }
+        
+        .group-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .group-badge.private {
+            background: #ffeeba;
+            color: #856404;
+        }
+        
+        .group-badge.public {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .group-description {
+            color: var(--fg-dim);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        
+        .group-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--fg-dim);
+        }
+        
+        .group-role {
+            background: var(--accent-blue);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .group-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .button.small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .button.danger {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .button.danger:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--fg-dim);
+        }
+        
+        .empty-state h3 {
+            color: var(--fg);
+            margin-bottom: 1rem;
+        }
+        
+        .empty-actions {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .chat-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .chat-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .groups-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .empty-actions {
+                flex-direction: column;
+                align-items: center;
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

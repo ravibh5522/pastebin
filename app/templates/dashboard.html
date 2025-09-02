@@ -12,6 +12,7 @@
             <h1 class="logo"><a href="/">Paste Shaver</a></h1>
             <div class="actions">
                 <span class="user-info">Hello, {{ user.username }}</span>
+                <a href="/chat" class="button secondary">Chat</a>
                 <a href="/" class="button secondary">New Paste</a>
                 <form action="/logout" method="post" style="display: inline;" id="logoutForm">
                     <button type="submit" class="button logout">Logout</button>
@@ -19,9 +20,67 @@
             </div>
         </div>
         
+        <div class="search-section">
+            <form method="get" action="/search" class="search-form">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        placeholder="Search all pastes globally..." 
+                        value="{{ search_query }}"
+                        class="search-input"
+                    >
+                    <button type="submit" class="search-button">Global Search</button>
+                    <a href="/search" class="browse-all">Browse All</a>
+                </div>
+            </form>
+        </div>
+        
+        {% if search_query and all_search_results %}
+        <div class="global-search-results">
+            <h3>Global Search Results for "{{ search_query }}"</h3>
+            <div class="paste-grid">
+                {% for paste in all_search_results %}
+                <div class="paste-card">
+                    <div class="paste-header">
+                        <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                        <div class="paste-meta">
+                            {% if paste.owner %}
+                                <span class="paste-owner">by {{ paste.owner.username }}</span>
+                            {% else %}
+                                <span class="paste-owner">by Anonymous</span>
+                            {% endif %}
+                            <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                    <div class="paste-preview">
+                        {% if paste.content %}
+                            <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
+                        {% endif %}
+                        {% if paste.filenames %}
+                            <div class="file-count">
+                                📎 {{ paste.filenames.split(',') | length }} file(s)
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="view-all-results">
+                <a href="/search?q={{ search_query }}" class="button">View All Results</a>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="dashboard-content">
             <div class="dashboard-section">
-                <h2>My Pastes</h2>
+                <h2>
+                    {% if search_query %}
+                        My Pastes - Search Results for "{{ search_query }}"
+                    {% else %}
+                        My Pastes
+                    {% endif %}
+                </h2>
                 {% if user_pastes %}
                     <div class="paste-grid">
                         {% for paste in user_pastes %}
@@ -45,14 +104,25 @@
                     </div>
                 {% else %}
                     <div class="empty-state">
-                        <p>You haven't created any pastes yet.</p>
-                        <a href="/" class="button">Create Your First Paste</a>
+                        {% if search_query %}
+                            <p>No pastes found matching "{{ search_query }}".</p>
+                            <a href="/dashboard" class="button">View All Pastes</a>
+                        {% else %}
+                            <p>You haven't created any pastes yet.</p>
+                            <a href="/" class="button">Create Your First Paste</a>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
             
             <div class="dashboard-section">
-                <h2>Saved Pastes</h2>
+                <h2>
+                    {% if search_query %}
+                        Saved Pastes - Search Results for "{{ search_query }}"
+                    {% else %}
+                        Saved Pastes
+                    {% endif %}
+                </h2>
                 {% if saved_pastes %}
                     <div class="paste-grid">
                         {% for saved_paste in saved_pastes %}
@@ -84,8 +154,13 @@
                     </div>
                 {% else %}
                     <div class="empty-state">
-                        <p>You haven't saved any pastes yet.</p>
-                        <p>Click the save button on any paste to add it to your collection.</p>
+                        {% if search_query %}
+                            <p>No saved pastes found matching "{{ search_query }}".</p>
+                            <a href="/dashboard" class="button">View All Saved Pastes</a>
+                        {% else %}
+                            <p>You haven't saved any pastes yet.</p>
+                            <p>Click the save button on any paste to add it to your collection.</p>
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -94,6 +169,103 @@
 
     <style>
         .dashboard-content {
+            margin-top: 2rem;
+        }
+        
+        .search-section {
+            margin: 2rem 0;
+        }
+        
+        .search-form {
+            width: 100%;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            max-width: 600px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .search-button {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .search-button:hover {
+            background: #0056b3;
+        }
+        
+        .clear-search {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .clear-search:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .browse-all {
+            color: var(--accent-blue);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .browse-all:hover {
+            background: var(--border-color);
+        }
+        
+        .global-search-results {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 2px solid var(--accent-blue);
+        }
+        
+        .global-search-results h3 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .view-all-results {
+            text-align: center;
             margin-top: 2rem;
         }
         
@@ -211,6 +383,20 @@
                 align-items: flex-end;
             }
             
+            .search-container {
+                flex-direction: column;
+                max-width: none;
+            }
+            
+            .search-input {
+                width: 100%;
+            }
+            
+            .search-button, .browse-all {
+                width: 100%;
+                text-align: center;
+            }
+            
             .paste-header {
                 flex-direction: column;
                 gap: 0.5rem;
@@ -223,5 +409,40 @@
     </style>
     
     <script src="/static/session.js"></script>
+    <script>
+        // Enhanced search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('.search-input');
+            
+            // Focus search with Ctrl+F or Cmd+F
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+                
+                // Clear search with Escape when focused on search input
+                if (e.key === 'Escape' && document.activeElement === searchInput) {
+                    if (searchInput.value) {
+                        searchInput.value = '';
+                        // Submit form to clear results
+                        searchInput.closest('form').submit();
+                    }
+                }
+            });
+            
+            // Auto-submit search after typing stops (debounced)
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    // Auto-submit if there's content or if clearing
+                    if (this.value.trim().length >= 2 || this.value.trim().length === 0) {
+                        this.closest('form').submit();
+                    }
+                }, 300);
+            });
+        });
+    </script>
 </body>
 </html>

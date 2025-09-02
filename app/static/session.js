@@ -58,8 +58,26 @@ class PastebinSession {
         const authPages = ['/login', '/signup'];
         
         if (authPages.includes(currentPath)) {
+            // Don't auto-redirect if there's an error message (indicates failed login)
+            const errorMessage = document.querySelector('.error-message');
+            if (errorMessage) {
+                // Clear invalid session data when there's a login error
+                this.clearSession();
+                return false;
+            }
+            
             if (this.isSessionValid()) {
-                window.location.href = '/dashboard';
+                // Only redirect if we can verify server-side authentication
+                // Add a small delay to avoid race conditions
+                setTimeout(() => {
+                    this.verifyServerSession().then(isValid => {
+                        if (isValid) {
+                            window.location.href = '/dashboard';
+                        } else {
+                            this.clearSession();
+                        }
+                    });
+                }, 100);
                 return true;
             }
         }
@@ -111,8 +129,16 @@ class PastebinSession {
         // Handle login form
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
-            // Pre-fill username if available
-            this.prefillLoginForm();
+            // Clear any stale session data if there's an error message
+            const errorMessage = document.querySelector('.error-message');
+            if (errorMessage) {
+                this.clearSession();
+            }
+            
+            // Pre-fill username if available and no error
+            if (!errorMessage) {
+                this.prefillLoginForm();
+            }
             
             // Save session on login
             loginForm.addEventListener('submit', (e) => {
@@ -144,6 +170,21 @@ class PastebinSession {
             console.log('Could not check server session status');
         }
         return { authenticated: false };
+    }
+
+    // Verify if the session is valid on the server side
+    async verifyServerSession() {
+        try {
+            const response = await fetch('/dashboard', { 
+                method: 'HEAD',
+                credentials: 'same-origin'
+            });
+            // If we get a 200, we're authenticated. If we get a 303 redirect, we're not.
+            return response.status === 200;
+        } catch (e) {
+            console.log('Could not verify server session');
+            return false;
+        }
     }
 }
 

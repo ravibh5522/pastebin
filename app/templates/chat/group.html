@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ group.name }} - Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <div class="chat-sidebar">
+            <div class="sidebar-header">
+                <h3>{{ group.name }}</h3>
+                <div class="group-actions">
+                    {% if group.invite_code %}
+                        <button class="button small" onclick="copyInviteCode('{{ group.invite_code }}')">Share</button>
+                    {% endif %}
+                    <a href="/chat" class="button small secondary">Back to Chat</a>
+                </div>
+            </div>
+            
+            <div class="group-info">
+                <p class="group-description">{{ group.description or "No description" }}</p>
+                {% if group.invite_code %}
+                    <div class="invite-code">
+                        <strong>Invite Code:</strong> 
+                        <code id="inviteCode">{{ group.invite_code }}</code>
+                        <button onclick="copyInviteCode('{{ group.invite_code }}')" class="copy-btn">📋</button>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="members-section">
+                <h4>Members ({{ members|length }})</h4>
+                
+                {% if user_is_admin or user_is_acting_leader %}
+                    <div class="admin-controls">
+                        <h5>{% if user_is_admin %}Admin{% else %}Acting Leader{% endif %} Controls</h5>
+                        
+                        <!-- Add Member -->
+                        <div class="control-group">
+                            <label>Add Member:</label>
+                            <div class="add-member-form">
+                                <input type="text" id="usernameInput" placeholder="Username" />
+                                <button onclick="addMemberByUsername()" class="button small">Add</button>
+                            </div>
+                        </div>
+                        
+                        {% if user_is_admin %}
+                            <!-- Refresh Invite Code -->
+                            <div class="control-group">
+                                <button onclick="refreshInviteCode()" class="button small secondary">🔄 Refresh Code</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <div class="members-list">
+                    {% for member in members %}
+                        <div class="member-item" data-user-id="{{ member.id }}">
+                            <div class="member-info">
+                                <span class="member-name">{{ member.username }}</span>
+                                {% if member.is_admin %}
+                                    <span class="member-role admin">👑 Admin</span>
+                                {% elif member.is_acting_leader %}
+                                    <span class="member-role acting-leader">⭐ Acting Leader</span>
+                                {% endif %}
+                                <span class="member-status" id="status-{{ member.id }}">●</span>
+                            </div>
+                            
+                            {% if (user_is_admin or user_is_acting_leader) and member.id != current_user.id and member.id != group.creator_id %}
+                                <div class="member-actions">
+                                    {% if user_is_admin %}
+                                        {% if not member.is_acting_leader %}
+                                            <button onclick="setActingLeader({{ member.id }}, true)" class="button tiny">⭐ Make Leader</button>
+                                        {% else %}
+                                            <button onclick="setActingLeader({{ member.id }}, false)" class="button tiny secondary">❌ Remove Leader</button>
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    {% if not member.is_admin or user_is_admin %}
+                                        <button onclick="removeMember({{ member.id }})" class="button tiny danger">🗑️ Remove</button>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span id="typingText">Someone is typing...</span>
+            </div>
+        </div>
+        
+        <!-- Main chat area -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h2>{{ group.name }}</h2>
+                    <span class="online-count" id="onlineCount">{{ members|length }} members</span>
+                </div>
+                <div class="chat-controls">
+                    <button class="button small" onclick="scrollToBottom()">📍 Latest</button>
+                    <button class="button small secondary" onclick="toggleSidebar()">👥 Members</button>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                {% for message in messages %}
+                    {% set width_class = '' %}
+                    {% if message.message_type == "text" %}
+                        {% if message.content|length < 50 %}
+                            {% set width_class = 'short-text' %}
+                        {% elif message.content|length < 150 %}
+                            {% set width_class = 'medium-text' %}
+                        {% else %}
+                            {% set width_class = 'long-text' %}
+                        {% endif %}
+                    {% endif %}
+                    <div class="message {% if message.sender.id == current_user.id %}sent{% else %}received{% endif %} {{ width_class }}" data-message-id="{{ message.id }}">
+                        <div class="message-header">
+                            <div class="message-meta">
+                                <span class="message-sender">{{ message.sender.username }}</span>
+                                <span class="message-time">{{ message.created_at.strftime('%H:%M') }}</span>
+                                {% if message.edited_at %}
+                                    <span class="message-edited">(edited)</span>
+                                {% endif %}
+                            </div>
+                            <div class="message-actions-top">
+                                {% if message.message_type == "code" %}
+                                    <button class="action-btn copy-btn" onclick="copyCode(this)" title="Copy code">📋</button>
+                                {% elif message.message_type == "file" %}
+                                    <button class="action-btn copy-btn" onclick="copyText('{{ message.file_name }}')" title="Copy filename">📋</button>
+                                {% else %}
+                                    <button class="action-btn copy-btn" onclick="copyText(this.closest('.message').querySelector('.text-message').textContent.trim())" title="Copy message">📋</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if message.reply_to %}
+                            <div class="message-reply">
+                                <span class="reply-author">{{ message.reply_to.sender.username }}</span>
+                                <span class="reply-content">{{ message.reply_to.content[:50] }}{% if message.reply_to.content|length > 50 %}...{% endif %}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="message-content">
+                            {% if message.message_type == "code" %}
+                                <div class="code-block-container">
+                                    <div class="code-header">
+                                        <span class="code-language">{{ message.code_language or 'text' }}</span>
+                                        <div class="code-actions">
+                                            <button class="action-btn download-btn" onclick="downloadCode(this, '{{ message.code_language or 'text' }}')" title="Download code">💾</button>
+                                        </div>
+                                    </div>
+                                    <div class="code-wrapper">
+                                        <pre class="code-content" data-lines="{{ message.content.count('\n') + 1 }}"><code class="language-{{ message.code_language or 'text' }}">{{ message.content }}</code></pre>
+                                        {% if message.content.count('\n') + 1 > 10 %}
+                                            <button class="expand-btn" onclick="toggleCodeExpand(this)">
+                                                <span class="expand-text">Show more</span>
+                                                <span class="expand-icon">▼</span>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% elif message.message_type == "file" %}
+                                <div class="file-message">
+                                    <span class="file-icon">📎</span>
+                                    <a href="/chat/download/{{ group.id }}/{{ message.id }}" class="file-link">{{ message.file_name }}</a>
+                                </div>
+                            {% else %}
+                                <div class="text-message">{{ message.content }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="message-actions">
+                            {% if message.message_type == "file" %}
+                                <button onclick="replyToMessage({{ message.id }}, '{{ message.sender.username }}', '{{ message.file_name[:30] }}...')" class="action-btn">↩️</button>
+                            {% else %}
+                                <button onclick="replyToMessage({{ message.id }}, '{{ message.sender.username }}', '{{ (message.content or '')[:30] }}...')" class="action-btn">↩️</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="message-input-container">
+                <div class="reply-preview" id="replyPreview" style="display: none;">
+                    <div class="reply-content">
+                        <span class="reply-to">Replying to <strong id="replyAuthor"></strong></span>
+                        <span class="reply-text" id="replyText"></span>
+                    </div>
+                    <button onclick="cancelReply()" class="cancel-reply">✕</button>
+                </div>
+                
+                <div class="input-controls">
+                    <div class="message-type-selector">
+                        <select id="messageType" onchange="toggleCodeLanguage()">
+                            <option value="text">💬 Text</option>
+                            <option value="code">💻 Code</option>
+                        </select>
+                        <select id="codeLanguage" style="display: none;">
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="sql">SQL</option>
+                            <option value="bash">Bash</option>
+                            <option value="json">JSON</option>
+                            <option value="xml">XML</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
+                        <button onclick="document.getElementById('fileInput').click()" class="file-btn">📎</button>
+                    </div>
+                </div>
+                
+                <div class="message-input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type your message..." 
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="handleInput()"
+                        onblur="stopTyping()"
+                    ></textarea>
+                    <button id="sendButton" onclick="sendMessage()" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            background: #0d1117;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .chat-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .chat-sidebar {
+            width: 300px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-header h3 {
+            margin: 0 0 1rem 0;
+            color: var(--fg);
+        }
+        
+        .group-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .group-info {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .group-description {
+            color: var(--fg-dim);
+            margin: 0 0 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .invite-code {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--fg-dim);
+        }
+        
+        .invite-code code {
+            background: var(--bg-dark);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--accent-blue);
+        }
+        
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .members-section {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .admin-controls {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .admin-controls h5 {
+            margin: 0 0 0.75rem 0;
+            color: #58a6ff;
+            font-size: 0.85rem;
+        }
+        
+        .control-group {
+            margin-bottom: 0.75rem;
+        }
+        
+        .control-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 0.25rem;
+        }
+        
+        .add-member-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .add-member-form input {
+            flex: 1;
+            padding: 0.4rem;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #0d1117;
+            color: #e6edf3;
+            font-size: 0.8rem;
+        }
+        
+        .members-section h4 {
+            margin: 0 0 1rem 0;
+            color: var(--fg);
+            font-size: 0.9rem;
+        }
+        
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .member-item:hover {
+            background: #21262d;
+        }
+        
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        
+        .member-role {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+        
+        .member-role.admin {
+            background: #ffd700;
+            color: #000;
+        }
+        
+        .member-role.acting-leader {
+            background: #58a6ff;
+            color: #fff;
+        }
+        
+        .member-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        .button.tiny {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.7rem;
+        }
+        
+        .button.danger {
+            background: #da3633;
+        }
+        
+        .button.danger:hover {
+            background: #b91c1c;
+        }
+        
+        .member-name {
+            color: var(--fg);
+        }
+        
+        .member-status {
+            font-size: 0.8rem;
+            color: var(--fg-dim);
+        }
+        
+        .member-status.online {
+            color: var(--accent-green);
+        }
+        
+        .typing-indicator {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--fg-dim);
+        }
+        
+        .typing-dots {
+            display: inline-flex;
+            gap: 2px;
+            margin-right: 0.5rem;
+        }
+        
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            background: #161b22;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-title h2 {
+            margin: 0;
+            color: var(--fg);
+            font-size: 1.2rem;
+        }
+        
+        .online-count {
+            font-size: 0.8rem;
+            color: var(--fg-dim);
+        }
+        
+        .chat-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+            scroll-behavior: smooth;
+            background: #0d1117;
+        }
+        
+        .message {
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 12px;
+            background: #1a1d29;
+            border: 1px solid #252836;
+            position: relative;
+            max-width: 70%;
+            min-width: 120px;
+            width: fit-content;
+            word-wrap: break-word;
+        }
+        
+        .message.sent {
+            margin-left: auto;
+            margin-right: 0.5rem;
+            background: #2563eb;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: #2563eb;
+        }
+        
+        .message.sent .message-sender {
+            color: white;
+        }
+        
+        .message.sent .message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .message.sent .text-message {
+            color: white;
+        }
+        
+        .message.sent .code-block-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .message.sent .code-header {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .message.sent .code-language {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .message.sent .file-message {
+            color: white;
+        }
+        
+        .message.sent .file-link {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message.sent .file-link:hover {
+            color: white;
+        }
+        
+        .message.sent .message-reply {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .message.sent .reply-author {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message.sent .reply-content {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .message.received {
+            margin-left: 0.5rem;
+            margin-right: auto;
+        }
+        
+        .message:hover {
+            border-color: var(--accent-blue);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .message-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .message-actions-top {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--fg-dim);
+        }
+        
+        .message-edited {
+            font-size: 0.75rem;
+            color: var(--fg-dim);
+            font-style: italic;
+        }
+        
+        .message-reply {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-dark);
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .reply-author {
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin-right: 0.5rem;
+        }
+        
+        .reply-content {
+            color: var(--fg-dim);
+        }
+        
+        .message-content {
+            line-height: 1.5;
+            color: var(--fg);
+        }
+        
+        .message-content pre {
+            background: #1e1e1e;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+        
+        .message-content code {
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .text-message {
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        
+        /* Variable width based on content */
+        .message.short-text {
+            max-width: 50%;
+        }
+        
+        .message.medium-text {
+            max-width: 60%;
+        }
+        
+        .message.long-text {
+            max-width: 70%;
+        }
+        
+        /* Code block enhancements */
+        .code-block-container {
+            margin: 0.5rem 0;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .code-language {
+            font-size: 0.85rem;
+            color: #58a6ff;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .code-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .code-wrapper {
+            position: relative;
+        }
+        
+        .code-content {
+            background: #1e1e1e !important;
+            margin: 0 !important;
+            padding: 1rem !important;
+            border-radius: 0 !important;
+            overflow-x: auto;
+            max-height: 300px;
+            transition: max-height 0.3s ease;
+        }
+        
+        .code-content.collapsed {
+            max-height: 240px; /* ~10 lines */
+            overflow: hidden;
+        }
+        
+        .expand-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, #1e1e1e);
+            border: none;
+            padding: 1rem;
+            color: var(--accent-blue);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .expand-btn:hover {
+            background: linear-gradient(transparent, var(--bg-light));
+        }
+        
+        .expand-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .expand-btn.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Copy button styles */
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--fg-dim);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0.15rem;
+            border-radius: 3px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            opacity: 0.6;
+        }
+        
+        .action-btn:hover {
+            background: var(--bg-light);
+            color: var(--fg);
+            opacity: 1;
+        }
+        
+        .loading-messages {
+            text-align: center;
+            padding: 1rem;
+            color: var(--fg-dim);
+            font-style: italic;
+            border-bottom: 1px solid var(--bg-med);
+            background: var(--bg-dark);
+        }
+        
+        .expand-btn {
+            background: var(--bg-med);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-btn:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            color: var(--accent-green);
+        }
+        
+        .download-btn:hover {
+            color: var(--accent-blue);
+        }
+        
+        /* Position copy buttons for text messages */
+        .text-message .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .message:hover .text-message .copy-btn {
+            opacity: 0.7;
+        }
+        
+        /* File message copy button */
+        .file-message .copy-btn {
+            margin-left: auto;
+        }
+        
+        .file-message {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #161b22;
+            border-radius: 4px;
+        }
+        
+        .file-icon {
+            font-size: 1.2rem;
+        }
+        
+        .file-link {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        
+        .file-link:hover {
+            text-decoration: underline;
+        }
+        
+        .message-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: var(--border-color);
+        }
+        
+        .message-input-container {
+            border-top: 1px solid #30363d;
+            background: #161b22;
+        }
+        
+        .reply-preview {
+            padding: 0.75rem 1rem;
+            background: #0d1117;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .reply-content {
+            flex: 1;
+        }
+        
+        .reply-to {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--fg-dim);
+            margin-bottom: 0.25rem;
+        }
+        
+        .reply-text {
+            font-size: 0.9rem;
+            color: var(--fg);
+        }
+        
+        .cancel-reply {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--fg-dim);
+            padding: 0.25rem;
+        }
+        
+        .input-controls {
+            display: flex;
+            padding: 0.75rem 1rem 0 1rem;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .message-type-selector {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .message-type-selector select {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-dark);
+            color: var(--fg);
+            font-size: 0.85rem;
+        }
+        
+        .file-upload {
+            margin-left: auto;
+        }
+        
+        .file-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+        
+        .file-btn:hover {
+            background: var(--border-color);
+        }
+        
+        .message-input-wrapper {
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            background: #0d1117;
+            color: #e6edf3;
+            font-size: 1rem;
+            resize: none;
+            min-height: 2.5rem;
+            max-height: 200px;
+            line-height: 1.4;
+        }
+        
+        #messageInput:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        #sendButton {
+            padding: 0.75rem 1.5rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        #sendButton:hover:not(:disabled) {
+            background: #1d4ed8;
+        }
+        
+        #sendButton:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+        
+        .button.small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transform: translateX(-100%);
+            }
+            
+            .chat-sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .chat-main {
+                width: 100%;
+            }
+            
+            .chat-header {
+                padding: 0.75rem;
+            }
+            
+            .input-controls {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+    
+    <script>
+        let ws;
+        let currentUser = {{ current_user.id }};
+        let groupId = {{ group.id }};
+        let authToken = "{{ auth_token }}";
+        let replyToId = null;
+        let typingTimer;
+        let isTyping = false;
+        
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/chat/${groupId}?token=${authToken}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('Connected to chat');
+                updateConnectionStatus(true);
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = function(event) {
+                console.log('Disconnected from chat');
+                updateConnectionStatus(false);
+                // Attempt to reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'new_message':
+                    addMessageToChat(data.message);
+                    break;
+                case 'user_joined':
+                    updateUserStatus(data.user_id, true);
+                    break;
+                case 'user_left':
+                    updateUserStatus(data.user_id, false);
+                    break;
+                case 'typing_update':
+                    updateTypingIndicator(data.typing_users);
+                    break;
+                case 'error':
+                    console.error('Chat error:', data.message);
+                    break;
+            }
+        }
+        
+        function addMessageToChat(message) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = createMessageElement(message);
+            container.appendChild(messageDiv);
+            scrollToBottom();
+            highlightCode();
+        }
+        
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            
+            // Determine if message is sent by current user
+            const isSent = message.sender.id === currentUser;
+            let className = isSent ? 'message sent' : 'message received';
+            
+            // Add width class based on content length
+            if (message.message_type === 'text') {
+                const textLength = message.content.length;
+                if (textLength < 50) {
+                    className += ' short-text';
+                } else if (textLength < 150) {
+                    className += ' medium-text';
+                } else {
+                    className += ' long-text';
+                }
+            }
+            
+            messageDiv.className = className;
+            messageDiv.setAttribute('data-message-id', message.id);
+            
+            let replyHtml = '';
+            if (message.reply_to) {
+                replyHtml = `
+                    <div class="message-reply">
+                        <span class="reply-author">${message.reply_to.sender.username}</span>
+                        <span class="reply-content">${message.reply_to.content ? message.reply_to.content.substring(0, 50) : (message.reply_to.file_name || 'File')}${(message.reply_to.content && message.reply_to.content.length > 50) ? '...' : ''}</span>
+                    </div>
+                `;
+            }
+            
+            let contentHtml = '';
+            let copyButtonHtml = '';
+            
+            if (message.message_type === 'code') {
+                const lines = message.content.split('\n');
+                const needsExpand = lines.length > 10;
+                const codeStyle = needsExpand ? 'style="max-height: 240px; overflow: hidden;"' : '';
+                copyButtonHtml = `<button onclick="copyCode(this)" class="action-btn" title="Copy code">📋</button>`;
+                
+                contentHtml = `
+                    <div class="code-block-container">
+                        <div class="code-header">
+                            <span class="code-language">${message.code_language || 'text'}</span>
+                            <div class="code-actions">
+                                <button onclick="downloadCode(this)" class="action-btn" title="Download code">💾</button>
+                                ${needsExpand ? '<button onclick="toggleCodeExpand(this)" class="expand-btn" title="Expand code">⬇️</button>' : ''}
+                            </div>
+                        </div>
+                        <pre ${codeStyle}><code class="language-${message.code_language || 'text'}">${escapeHtml(message.content)}</code></pre>
+                    </div>
+                `;
+            } else if (message.message_type === 'file') {
+                copyButtonHtml = `<button onclick="copyText('${message.file_name}')" class="action-btn" title="Copy filename">📋</button>`;
+                contentHtml = `
+                    <div class="file-message">
+                        <span class="file-icon">📎</span>
+                        <a href="/chat/download/${groupId}/${message.id}" class="file-link">${message.file_name}</a>
+                    </div>
+                `;
+            } else {
+                copyButtonHtml = `<button onclick="copyText(this.closest('.message').querySelector('.text-message').textContent.trim())" class="action-btn" title="Copy message">📋</button>`;
+                contentHtml = `<div class="text-message">${escapeHtml(message.content)}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-meta">
+                        <span class="message-sender">${message.sender.username}</span>
+                        <span class="message-time">${new Date(message.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    <div class="message-actions-top">
+                        ${copyButtonHtml}
+                    </div>
+                </div>
+                ${replyHtml}
+                <div class="message-content">
+                    ${contentHtml}
+                </div>
+                <div class="message-actions">
+                    <button onclick="replyToMessage(${message.id}, '${message.sender.username}', '${escapeQuotes(message.content ? message.content.substring(0, 30) : message.file_name)}...')" class="action-btn">↩️</button>
+                </div>
+            `;
+            
+            return messageDiv;
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const messageType = document.getElementById('messageType').value;
+            const codeLanguage = document.getElementById('codeLanguage').value;
+            const content = input.value.trim();
+            
+            if (!content) return;
+            
+            const message = {
+                type: 'message',
+                content: content,
+                message_type: messageType,
+                code_language: messageType === 'code' ? codeLanguage : null,
+                reply_to_id: replyToId
+            };
+            
+            ws.send(JSON.stringify(message));
+            
+            input.value = '';
+            input.style.height = 'auto';
+            document.getElementById('sendButton').disabled = true;
+            cancelReply();
+            stopTyping();
+        }
+        
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        function handleInput() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            // Auto-resize textarea
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+            
+            // Enable/disable send button
+            sendButton.disabled = !input.value.trim();
+            
+            // Handle typing indicator
+            if (!isTyping && input.value.trim()) {
+                isTyping = true;
+                ws.send(JSON.stringify({type: 'typing', is_typing: true}));
+            }
+            
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(stopTyping, 2000);
+        }
+        
+        function stopTyping() {
+            if (isTyping) {
+                isTyping = false;
+                ws.send(JSON.stringify({type: 'typing', is_typing: false}));
+            }
+        }
+        
+        function replyToMessage(messageId, author, content) {
+            replyToId = messageId;
+            const preview = document.getElementById('replyPreview');
+            document.getElementById('replyAuthor').textContent = author;
+            document.getElementById('replyText').textContent = content;
+            preview.style.display = 'flex';
+            document.getElementById('messageInput').focus();
+        }
+        
+        function cancelReply() {
+            replyToId = null;
+            document.getElementById('replyPreview').style.display = 'none';
+        }
+        
+        function toggleCodeLanguage() {
+            const messageType = document.getElementById('messageType').value;
+            const codeLanguage = document.getElementById('codeLanguage');
+            codeLanguage.style.display = messageType === 'code' ? 'block' : 'none';
+        }
+        
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function updateConnectionStatus(connected) {
+            const onlineCount = document.getElementById('onlineCount');
+            if (connected) {
+                onlineCount.style.color = '#28a745';
+            } else {
+                onlineCount.style.color = '#dc3545';
+            }
+        }
+        
+        function updateUserStatus(userId, online) {
+            const statusElement = document.getElementById(`status-${userId}`);
+            if (statusElement) {
+                statusElement.className = online ? 'member-status online' : 'member-status';
+            }
+        }
+        
+        function updateTypingIndicator(typingUsers) {
+            const indicator = document.getElementById('typingIndicator');
+            const typingText = document.getElementById('typingText');
+            
+            // Filter out current user
+            const otherTyping = typingUsers.filter(id => id !== currentUser);
+            
+            if (otherTyping.length === 0) {
+                indicator.style.display = 'none';
+            } else {
+                indicator.style.display = 'block';
+                if (otherTyping.length === 1) {
+                    typingText.textContent = 'Someone is typing...';
+                } else {
+                    typingText.textContent = `${otherTyping.length} people are typing...`;
+                }
+            }
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.chat-sidebar');
+            sidebar.classList.toggle('open');
+        }
+        
+        function copyInviteCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Invite code copied to clipboard!');
+            });
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`/chat/upload-file/${groupId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    fileInput.value = '';
+                } else {
+                    alert('Failed to upload file');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to upload file');
+            }
+        }
+        
+        function highlightCode() {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function escapeQuotes(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        // Copy functionality
+        function copyCode(element) {
+            const codeBlock = element.closest('.code-block-container').querySelector('code');
+            const text = codeBlock.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyFeedback(element);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+        
+        function copyText(element) {
+            const messageContent = element.closest('.message').querySelector('.text-message');
+            const text = messageContent.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyFeedback(element);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+        
+        function showCopyFeedback(element) {
+            const originalText = element.textContent;
+            element.textContent = '✓';
+            element.style.color = 'var(--accent-green)';
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 1000);
+        }
+        
+        // Download functionality
+        function downloadCode(element) {
+            const codeBlock = element.closest('.code-block-container').querySelector('code');
+            const code = codeBlock.textContent;
+            const language = codeBlock.className.match(/language-(\w+)/)?.[1] || 'txt';
+            
+            showDownloadDialog(code, language);
+        }
+        
+        function showDownloadDialog(content, defaultExt) {
+            const fileName = prompt(`Enter filename (without extension):`, `code_snippet`);
+            if (fileName === null) return;
+            
+            const extension = defaultExt === 'text' ? 'txt' : defaultExt;
+            const fullFileName = fileName + '.' + extension;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fullFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Code expansion/collapse
+        function toggleCodeExpand(element) {
+            const codeContainer = element.closest('.code-block-container');
+            const codeBlock = codeContainer.querySelector('code');
+            const lines = codeBlock.textContent.split('\n');
+            
+            if (element.textContent === '⬇️') {
+                // Expand
+                codeBlock.style.maxHeight = 'none';
+                codeBlock.style.overflow = 'visible';
+                element.textContent = '⬆️';
+                element.title = 'Collapse code';
+            } else {
+                // Collapse
+                codeBlock.style.maxHeight = '240px';
+                codeBlock.style.overflow = 'hidden';
+                element.textContent = '⬇️';
+                element.title = 'Expand code';
+            }
+        }
+        
+        // Auto-detect code language
+        function detectCodeLanguage(content) {
+            const patterns = {
+                'javascript': [/\b(function|const|let|var|=>|console\.log)\b/, /\b(async|await|Promise)\b/],
+                'python': [/\b(def|import|from|class|if __name__|print)\b/, /:\s*$/m],
+                'java': [/\b(public|private|class|static|void|System\.out)\b/, /\bpublic\s+static\s+void\s+main\b/],
+                'csharp': [/\b(using|namespace|class|public|private|static|Console\.WriteLine)\b/],
+                'cpp': [/\b(#include|using namespace|cout|cin|std::)\b/, /\bint\s+main\s*\(/],
+                'html': [/<\/?[a-z][\s\S]*>/i, /<!DOCTYPE/i],
+                'css': [/\{[^}]*\}/, /\.[a-zA-Z][\w-]*\s*\{/],
+                'sql': [/\b(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/i],
+                'json': [/^\s*[\{\[]/, /"\s*:\s*["\{\[\d]/],
+                'xml': [/<\?xml/, /<\/\w+>/],
+                'bash': [/^\s*#!/, /\b(echo|cd|ls|grep|awk|sed)\b/],
+                'php': [/<\?php/, /\$\w+/]
+            };
+            
+            for (const [lang, regexes] of Object.entries(patterns)) {
+                if (regexes.some(regex => regex.test(content))) {
+                    return lang;
+                }
+            }
+            
+            return 'text';
+        }
+        
+        // Virtual infinite scroll
+        let isLoadingMessages = false;
+        let hasMoreMessages = true;
+        let oldestMessageId = null;
+        
+        function setupInfiniteScroll() {
+            const container = document.getElementById('messagesContainer');
+            
+            container.addEventListener('scroll', () => {
+                if (container.scrollTop === 0 && hasMoreMessages && !isLoadingMessages) {
+                    loadMoreMessages();
+                }
+            });
+        }
+        
+        async function loadMoreMessages() {
+            if (isLoadingMessages || !hasMoreMessages) return;
+            
+            isLoadingMessages = true;
+            const container = document.getElementById('messagesContainer');
+            const scrollHeight = container.scrollHeight;
+            
+            try {
+                const url = `/chat/messages/${groupId}?before=${oldestMessageId || ''}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.messages.length === 0) {
+                    hasMoreMessages = false;
+                    return;
+                }
+                
+                // Add loading indicator
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading-messages';
+                loadingDiv.textContent = 'Loading more messages...';
+                container.prepend(loadingDiv);
+                
+                // Add messages to top
+                data.messages.reverse().forEach(message => {
+                    const messageDiv = createMessageElement(message);
+                    container.insertBefore(messageDiv, loadingDiv);
+                });
+                
+                // Remove loading indicator
+                container.removeChild(loadingDiv);
+                
+                // Update oldest message ID
+                oldestMessageId = data.messages[0].id;
+                
+                // Maintain scroll position
+                const newScrollHeight = container.scrollHeight;
+                container.scrollTop = newScrollHeight - scrollHeight;
+                
+                // Highlight new code blocks
+                highlightCode();
+                
+            } catch (error) {
+                console.error('Failed to load more messages:', error);
+            } finally {
+                isLoadingMessages = false;
+            }
+        }
+        
+        // Enhanced message input with auto-detection
+        function enhancedHandleInput() {
+            const input = document.getElementById('messageInput');
+            const messageType = document.getElementById('messageType');
+            const codeLanguage = document.getElementById('codeLanguage');
+            const content = input.value.trim();
+            
+            // Auto-detect code if content looks like code
+            if (content.length > 20 && messageType.value === 'text') {
+                const detectedLang = detectCodeLanguage(content);
+                if (detectedLang !== 'text') {
+                    messageType.value = 'code';
+                    codeLanguage.value = detectedLang;
+                    toggleCodeLanguage();
+                }
+            }
+            
+            // Call original input handler
+            handleInput();
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            connectWebSocket();
+            scrollToBottom();
+            highlightCode();
+            setupInfiniteScroll();
+            document.getElementById('messageInput').focus();
+            
+            // Replace input handler with enhanced version
+            const input = document.getElementById('messageInput');
+            input.removeEventListener('input', handleInput);
+            input.addEventListener('input', enhancedHandleInput);
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (ws) {
+                ws.close();
+            }
+        });
+        
+        // Admin Controls Functions
+        async function addMemberByUsername() {
+            const usernameInput = document.getElementById('usernameInput');
+            const username = usernameInput.value.trim();
+            
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/chat/admin/add-member/${groupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ username: username })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    location.reload(); // Refresh page to show updated member list
+                } else {
+                    alert(result.detail || 'Failed to add member');
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                alert('Failed to add member');
+            }
+            
+            usernameInput.value = '';
+        }
+        
+        async function setActingLeader(userId) {
+            try {
+                const response = await fetch(`/chat/admin/set-acting-leader/${groupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    location.reload(); // Refresh page to show updated roles
+                } else {
+                    alert(result.detail || 'Failed to set acting leader');
+                }
+            } catch (error) {
+                console.error('Error setting acting leader:', error);
+                alert('Failed to set acting leader');
+            }
+        }
+        
+        async function removeMember(userId) {
+            if (!confirm('Are you sure you want to remove this member?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/chat/admin/remove-member/${groupId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    location.reload(); // Refresh page to show updated member list
+                } else {
+                    alert(result.detail || 'Failed to remove member');
+                }
+            } catch (error) {
+                console.error('Error removing member:', error);
+                alert('Failed to remove member');
+            }
+        }
+        
+        async function refreshInviteCode() {
+            try {
+                const response = await fetch(`/chat/admin/refresh-invite-code/${groupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Update the invite code display
+                    const inviteCodeElement = document.querySelector('.invite-code-display');
+                    if (inviteCodeElement) {
+                        inviteCodeElement.textContent = result.invite_code;
+                    }
+                    alert('Invite code refreshed successfully');
+                } else {
+                    alert(result.detail || 'Failed to refresh invite code');
+                }
+            } catch (error) {
+                console.error('Error refreshing invite code:', error);
+                alert('Failed to refresh invite code');
+            }
+        }
+    </script>
+</body>
+</html>

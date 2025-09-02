@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Group - Paste Shaver</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                <a href="/dashboard" class="button secondary">Dashboard</a>
+                <a href="/chat" class="button secondary">Chat</a>
+                <span class="user-info">Hello, {{ current_user.username }}</span>
+                <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                    <button type="submit" class="button logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Join Group</h2>
+                <p>Enter an invite code to join an existing group</p>
+            </div>
+            
+            <form method="post" action="/chat/join-group" class="form">
+                <div class="form-group">
+                    <label for="invite_code">Invite Code *</label>
+                    <input type="text" id="invite_code" name="invite_code" required maxlength="20" 
+                           placeholder="Enter invite code" autofocus>
+                    <small class="form-help">Ask the group owner for the invite code</small>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="/chat" class="button secondary">Cancel</a>
+                    <button type="submit" class="button">Join Group</button>
+                </div>
+            </form>
+            
+            <div class="info-section">
+                <h3>How to get an invite code?</h3>
+                <ul>
+                    <li>Ask the group owner or a member for the invite code</li>
+                    <li>Private groups require invite codes to join</li>
+                    <li>Public groups may have shared invite codes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .form-header h2 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-header p {
+            color: var(--text-secondary);
+        }
+        
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-group input {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .form-help {
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .info-section {
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .info-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .info-section ul {
+            color: var(--text-secondary);
+            padding-left: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .info-section li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+        
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header .actions {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
+            
+            .form-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

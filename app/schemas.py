@@ -54,3 +54,58 @@ class SavedPaste(BaseModel):
     
     class Config:
         from_attributes = True
+
+# Group Schemas
+class GroupBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    is_private: bool = False
+
+class GroupCreate(GroupBase):
+    pass
+
+class Group(GroupBase):
+    id: int
+    created_at: datetime
+    creator_id: int
+    invite_code: Optional[str] = None
+    creator: Optional[User] = None
+    
+    class Config:
+        from_attributes = True
+
+class GroupWithMembers(Group):
+    members: List[User] = []
+
+# Message Schemas
+class MessageBase(BaseModel):
+    content: Optional[str] = None
+    message_type: str = "text"
+    code_language: Optional[str] = None
+    reply_to_id: Optional[int] = None
+
+class MessageCreate(MessageBase):
+    group_id: int
+
+class MessageFile(BaseModel):
+    file_name: str
+    file_path: str
+    group_id: int
+
+class Message(MessageBase):
+    id: int
+    created_at: datetime
+    edited_at: Optional[datetime] = None
+    sender_id: int
+    group_id: int
+    file_name: Optional[str] = None
+    sender: Optional[User] = None
+    reply_to: Optional["Message"] = None
+    
+    class Config:
+        from_attributes = True
+
+# WebSocket message schemas
+class WSMessage(BaseModel):
+    type: str  # "message", "join", "leave", "typing", "error"
+    data: dict
