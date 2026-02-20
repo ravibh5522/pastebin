@@ -50,13 +50,13 @@
         {% endif %}
 
         {% if display_content %}
-            <h2>Text Content</h2>
+            <h2>Text Content <button id="copy-content-btn" class="button secondary small" title="Copy content to clipboard">📋 Copy</button></h2>
             <!-- Note: no language class, so highlight.js auto-detects -->
-            <pre><code>{{ display_content }}</code></pre>
+            <pre><code id="paste-content">{{ display_content }}</code></pre>
         {% elif paste.content %}
-            <h2>Text Content</h2>
+            <h2>Text Content <button id="copy-content-btn" class="button secondary small" title="Copy content to clipboard">📋 Copy</button></h2>
             <!-- Note: no language class, so highlight.js auto-detects -->
-            <pre><code>{{ paste.content }}</code></pre>
+            <pre><code id="paste-content">{{ paste.content }}</code></pre>
         {% endif %}
 
         {% if files_data %}
@@ -135,6 +135,24 @@
                 }, 2000);
             });
         });
+
+        // Copy content button
+        const copyContentBtn = document.getElementById('copy-content-btn');
+        if (copyContentBtn) {
+            copyContentBtn.addEventListener('click', () => {
+                const pasteContent = document.getElementById('paste-content');
+                if (pasteContent) {
+                    navigator.clipboard.writeText(pasteContent.textContent).then(() => {
+                        copyContentBtn.innerHTML = '✓ Copied!';
+                        copyContentBtn.style.backgroundColor = 'var(--accent-green)';
+                        setTimeout(() => {
+                            copyContentBtn.innerHTML = '📋 Copy';
+                            copyContentBtn.style.backgroundColor = '';
+                        }, 2000);
+                    });
+                }
+            });
+        }
 
         // --- Save/Unsave functionality ---
         const saveBtn = document.getElementById('save-btn');

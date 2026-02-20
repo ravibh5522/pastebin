@@ -27,7 +27,9 @@ body {
     padding: 2rem 1rem;
     line-height: 1.6;
 }
-.container { max-width: 900px; margin: 0 auto; }
+.container { max-width: 1400px; width: 100%; margin: 0 auto; padding: 0 1rem; box-sizing: border-box; }
+.container.full-width { max-width: none; }
+@media (min-width: 1800px) { .container { max-width: 1600px; } }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
 .logo a, .logo { color: var(--accent-blue); text-decoration: none; font-size: 1.8rem; font-weight: 700; }
 .actions .button { margin-left: 10px; }
@@ -36,6 +38,7 @@ h2 { color: var(--accent-green); border-bottom: 2px solid var(--border-color); p
 .button:hover, button:hover { background-color: #5d87d4; transform: translateY(-2px); }
 .button.secondary { background-color: var(--bg-light); color: var(--fg); }
 .button.secondary:hover { background-color: #565f89; }
+.button.small { padding: 0.35rem 0.75rem; font-size: 0.85rem; }
 form { display: flex; flex-direction: column; }
 textarea { width: 100%; min-height: 300px; background-color: var(--bg-med); border: 1px solid var(--border-color); color: var(--fg); padding: 1rem; font-family: var(--font-mono); font-size: 0.95rem; border-radius: 6px; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; }
 textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.3); }

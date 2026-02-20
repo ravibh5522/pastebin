@@ -74,7 +74,8 @@ def create_paste(db: Session, paste: schemas.PasteCreate):
         user_id=paste.user_id,
         is_private=paste.is_private,
         pin_hash=pin_hash,
-        encryption_salt=encryption_salt
+        encryption_salt=encryption_salt,
+        expires_at=paste.expires_at
     )
     db.add(db_paste)
     db.commit()
@@ -190,9 +191,21 @@ def is_paste_saved_by_user(db: Session, user_id: int, paste_id: int):
 
 # Auto-delete functionality
 def delete_old_pastes(db: Session, days: int = 5):
-    """Delete pastes older than specified days"""
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
-    old_pastes = db.query(models.Paste).filter(models.Paste.created_at < cutoff_date).all()
+    """Delete pastes that have expired (expires_at) or are older than specified days (fallback)"""
+    from sqlalchemy import or_
+    
+    current_time = datetime.utcnow()
+    cutoff_date = current_time - timedelta(days=days)
+    
+    # Delete pastes that:
+    # 1. Have expires_at set and have expired, OR
+    # 2. Have no expires_at set and are older than cutoff_date (legacy behavior)
+    old_pastes = db.query(models.Paste).filter(
+        or_(
+            models.Paste.expires_at < current_time,  # Expired pastes
+            (models.Paste.expires_at.is_(None)) & (models.Paste.created_at < cutoff_date)  # Legacy: no expiry, old pastes
+        )
+    ).all()
     
     uploads_dir = Path("uploads")
     deleted_count = 0
@@ -513,3 +526,220 @@ def search_group_messages(db: Session, group_id: int, search_query: str, limit: 
             models.Message.content.ilike(search_term)
         )
     ).order_by(desc(models.Message.created_at)).limit(limit).all()
+
+# ==================== Activity Logging ====================
+
+import json
+
+def log_activity(
+    db: Session,
+    action: str,
+    user_id: int = None,
+    ip_address: str = None,
+    user_agent: str = None,
+    resource_type: str = None,
+    resource_id: str = None,
+    extra_data: dict = None
+):
+    """Log an activity for analytics (no sensitive data)"""
+    # Anonymize IP address (keep only first 3 octets for IPv4)
+    anonymized_ip = None
+    if ip_address:
+        parts = ip_address.split('.')
+        if len(parts) == 4:
+            anonymized_ip = f"{parts[0]}.{parts[1]}.{parts[2]}.0"
+        else:
+            anonymized_ip = ip_address.split(':')[0] if ':' in ip_address else ip_address
+    
+    # Truncate user agent to reasonable length
+    truncated_ua = user_agent[:255] if user_agent else None
+    
+    # Convert extra_data to JSON string
+    extra_data_str = json.dumps(extra_data) if extra_data else None
+    
+    activity = models.ActivityLog(
+        action=action,
+        user_id=user_id,
+        ip_address=anonymized_ip,
+        user_agent=truncated_ua,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        extra_data=extra_data_str
+    )
+    db.add(activity)
+    db.commit()
+    return activity
+
+def get_activity_stats(db: Session, days: int = 30):
+    """Get activity statistics for analytics"""
+    from sqlalchemy import func
+    
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Total activities
+    total_activities = db.query(func.count(models.ActivityLog.id)).filter(
+        models.ActivityLog.created_at >= cutoff_date
+    ).scalar()
+    
+    # Activities by action type
+    activities_by_action = db.query(
+        models.ActivityLog.action,
+        func.count(models.ActivityLog.id).label('count')
+    ).filter(
+        models.ActivityLog.created_at >= cutoff_date
+    ).group_by(models.ActivityLog.action).all()
+    
+    # Daily activity counts
+    daily_activities = db.query(
+        func.date(models.ActivityLog.created_at).label('date'),
+        func.count(models.ActivityLog.id).label('count')
+    ).filter(
+        models.ActivityLog.created_at >= cutoff_date
+    ).group_by(func.date(models.ActivityLog.created_at)).order_by('date').all()
+    
+    # Unique users (by IP for anonymous)
+    unique_users = db.query(func.count(func.distinct(models.ActivityLog.user_id))).filter(
+        models.ActivityLog.created_at >= cutoff_date,
+        models.ActivityLog.user_id.isnot(None)
+    ).scalar()
+    
+    return {
+        'total_activities': total_activities,
+        'activities_by_action': {action: count for action, count in activities_by_action},
+        'daily_activities': [{'date': str(d), 'count': c} for d, c in daily_activities],
+        'unique_users': unique_users
+    }
+
+def get_hourly_stats(db: Session, hours: int = 24):
+    """Get hourly activity statistics"""
+    from sqlalchemy import func, extract
+    
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    
+    hourly_activities = db.query(
+        extract('hour', models.ActivityLog.created_at).label('hour'),
+        func.count(models.ActivityLog.id).label('count')
+    ).filter(
+        models.ActivityLog.created_at >= cutoff_time
+    ).group_by(extract('hour', models.ActivityLog.created_at)).all()
+    
+    return [{'hour': int(h), 'count': c} for h, c in hourly_activities]
+
+def get_recent_activities(db: Session, limit: int = 50):
+    """Get recent activities"""
+    return db.query(models.ActivityLog).order_by(
+        desc(models.ActivityLog.created_at)
+    ).limit(limit).all()
+
+def get_user_activity_count(db: Session, user_id: int):
+    """Get activity count for a specific user"""
+    from sqlalchemy import func
+    
+    return db.query(func.count(models.ActivityLog.id)).filter(
+        models.ActivityLog.user_id == user_id
+    ).scalar()
+
+# ==================== Admin Functions ====================
+
+def get_all_users(db: Session, skip: int = 0, limit: int = 100):
+    """Get all users with pagination"""
+    return db.query(models.User).offset(skip).limit(limit).all()
+
+def get_user_by_id(db: Session, user_id: int):
+    """Get user by ID"""
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def update_user(db: Session, user_id: int, username: str = None, email: str = None, 
+                is_active: bool = None, is_admin: bool = None):
+    """Update user details"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+    
+    if username is not None:
+        user.username = username
+    if email is not None:
+        user.email = email
+    if is_active is not None:
+        user.is_active = is_active
+    if is_admin is not None:
+        user.is_admin = is_admin
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+def delete_user(db: Session, user_id: int):
+    """Delete a user and all their data"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return False
+    
+    # Delete user's pastes
+    pastes = db.query(models.Paste).filter(models.Paste.user_id == user_id).all()
+    for paste in pastes:
+        paste_upload_dir = Path("uploads") / paste.slug
+        if paste_upload_dir.exists():
+            try:
+                shutil.rmtree(paste_upload_dir)
+            except Exception:
+                pass
+        db.delete(paste)
+    
+    # Delete saved pastes
+    db.query(models.SavedPaste).filter(models.SavedPaste.user_id == user_id).delete()
+    
+    # Delete user's messages
+    db.query(models.Message).filter(models.Message.sender_id == user_id).delete()
+    
+    # Delete user
+    db.delete(user)
+    db.commit()
+    return True
+
+def reset_user_password(db: Session, user_id: int, new_password: str):
+    """Reset user password"""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return None
+    
+    user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_total_users_count(db: Session):
+    """Get total number of users"""
+    from sqlalchemy import func
+    return db.query(func.count(models.User.id)).scalar()
+
+def get_total_pastes_count(db: Session):
+    """Get total number of pastes"""
+    from sqlalchemy import func
+    return db.query(func.count(models.Paste.id)).scalar()
+
+def get_total_groups_count(db: Session):
+    """Get total number of groups"""
+    from sqlalchemy import func
+    return db.query(func.count(models.Group.id)).scalar()
+
+def create_admin_user(db: Session, username: str, email: str, password: str):
+    """Create an admin user if it doesn't exist"""
+    existing = get_user_by_username(db, username)
+    if existing:
+        # Update to admin if exists
+        existing.is_admin = True
+        db.commit()
+        return existing
+    
+    hashed_password = get_password_hash(password)
+    db_user = models.User(
+        username=username,
+        email=email,
+        hashed_password=hashed_password,
+        is_admin=True
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user

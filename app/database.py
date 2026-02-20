@@ -42,6 +42,7 @@ class User(Base):
     hashed_password = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)  # Admin user flag
     
     # Relationships
     pastes = relationship("Paste", back_populates="owner")
@@ -58,6 +59,7 @@ class Paste(Base):
     content = Column(Text, nullable=True)  # <-- CHANGED: Content can be empty
     filenames = Column(String, nullable=True) # <-- NEW: To store file names
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)  # Auto-destruction time, null = never
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Optional for anonymous pastes
     
     # Private paste fields
@@ -117,6 +119,23 @@ class Message(Base):
     sender = relationship("User", back_populates="messages")
     group = relationship("Group", back_populates="messages")
     reply_to = relationship("Message", remote_side=[id])
+
+class ActivityLog(Base):
+    """Activity log for analytics - stores user actions (no sensitive data)"""
+    __tablename__ = "activity_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    action = Column(String, index=True)  # login, signup, paste_create, paste_view, chat_message, etc.
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # null for anonymous actions
+    ip_address = Column(String, nullable=True)  # Anonymized or partial IP
+    user_agent = Column(String, nullable=True)  # Browser info
+    resource_type = Column(String, nullable=True)  # paste, chat, user, etc.
+    resource_id = Column(String, nullable=True)  # ID or slug of the resource
+    extra_data = Column(Text, nullable=True)  # JSON string for additional non-sensitive data
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    
+    # Relationship
+    user = relationship("User", backref="activity_logs")
 
 def create_db_and_tables():
     Base.metadata.create_all(bind=engine)

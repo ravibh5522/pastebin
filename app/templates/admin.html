@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Paste Shaver</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a> <span class="admin-badge">Admin</span></h1>
+            <div class="actions">
+                <a href="/dashboard" class="button secondary">Dashboard</a>
+                <span class="user-info">{{ current_user.username }}</span>
+                <form action="/logout" method="post" style="display: inline;">
+                    <button type="submit" class="button logout">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stats Overview Cards -->
+        <section class="admin-stats">
+            <h2>📊 Analytics Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_users }}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_pastes }}</div>
+                        <div class="stat-label">Total Pastes</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_groups }}</div>
+                        <div class="stat-label">Chat Groups</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ activity_stats.total_activities }}</div>
+                        <div class="stat-label">Activities (30d)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="admin-charts">
+            <h2>📈 Activity Charts</h2>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Daily Activity (Last 30 Days)</h3>
+                    <canvas id="dailyActivityChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Hourly Activity (Last 24 Hours)</h3>
+                    <canvas id="hourlyActivityChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Activity Types</h3>
+                    <canvas id="activityTypesChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- User Management Section -->
+        <section class="admin-users">
+            <h2>👥 User Management</h2>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Admin</th>
+                            <th>Pastes</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr data-user-id="{{ user.id }}">
+                            <td>{{ user.id }}</td>
+                            <td>
+                                <input type="text" class="edit-field" value="{{ user.username }}" data-field="username" disabled>
+                            </td>
+                            <td>
+                                <input type="text" class="edit-field" value="{{ user.email }}" data-field="email" disabled>
+                            </td>
+                            <td>
+                                <span class="status-badge {{ 'active' if user.is_active else 'inactive' }}">
+                                    {{ 'Active' if user.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="role-badge {{ 'admin' if user.is_admin else '' }}">
+                                    {{ '👑 Admin' if user.is_admin else 'User' }}
+                                </span>
+                            </td>
+                            <td>{{ user.pastes | length }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td class="actions-cell">
+                                <button class="btn-small edit-btn" onclick="toggleEdit({{ user.id }})" title="Edit">✏️</button>
+                                <button class="btn-small save-btn" onclick="saveUser({{ user.id }})" style="display: none;" title="Save">💾</button>
+                                <button class="btn-small toggle-active" onclick="toggleActive({{ user.id }}, {{ user.is_active | lower }})" title="Toggle Active">
+                                    {{ '🔓' if user.is_active else '🔒' }}
+                                </button>
+                                <button class="btn-small toggle-admin" onclick="toggleAdmin({{ user.id }}, {{ user.is_admin | lower }})" title="Toggle Admin">
+                                    {{ '⭐' if not user.is_admin else '❌' }}
+                                </button>
+                                <button class="btn-small reset-pwd" onclick="resetPassword({{ user.id }})" title="Reset Password">🔑</button>
+                                {% if user.id != current_user.id %}
+                                <button class="btn-small delete-btn" onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="Delete">🗑️</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Recent Activity Section -->
+        <section class="admin-activity">
+            <h2>🕐 Recent Activity</h2>
+            <div class="activity-list">
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <span class="activity-action {{ activity.action }}">{{ activity.action }}</span>
+                    <span class="activity-user">{{ activity.user_id if activity.user_id else 'Anonymous' }}</span>
+                    <span class="activity-resource">{{ activity.resource_type }}: {{ activity.resource_id }}</span>
+                    <span class="activity-time">{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <style>
+        .admin-badge {
+            background: var(--accent-purple);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .admin-stats, .admin-charts, .admin-users, .admin-activity {
+            margin: 2rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-med);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            color: var(--fg-dim);
+            font-size: 0.9rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            background: var(--bg-med);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .chart-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--fg);
+            font-size: 1rem;
+        }
+
+        .users-table-container {
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-med);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .users-table th, .users-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .users-table th {
+            background: var(--bg-dark);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .users-table tbody tr:hover {
+            background: rgba(122, 162, 247, 0.1);
+        }
+
+        .edit-field {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--fg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .edit-field:not(:disabled) {
+            background: var(--bg-dark);
+            border-color: var(--accent-blue);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .status-badge.active {
+            background: rgba(158, 206, 106, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-badge.inactive {
+            background: rgba(255, 117, 127, 0.2);
+            color: #ff757f;
+        }
+
+        .role-badge {
+            font-size: 0.85rem;
+        }
+
+        .role-badge.admin {
+            color: var(--accent-purple);
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+        }
+
+        .btn-small {
+            background: var(--bg-light);
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 0.25rem;
+            transition: background 0.2s;
+        }
+
+        .btn-small:hover {
+            background: var(--accent-blue);
+        }
+
+        .delete-btn:hover {
+            background: #ff757f;
+        }
+
+        .activity-list {
+            background: var(--bg-med);
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-action {
+            background: var(--bg-light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .activity-action.login { background: rgba(158, 206, 106, 0.2); color: var(--accent-green); }
+        .activity-action.signup { background: rgba(122, 162, 247, 0.2); color: var(--accent-blue); }
+        .activity-action.paste_create { background: rgba(187, 154, 247, 0.2); color: var(--accent-purple); }
+        .activity-action.paste_view { background: rgba(255, 199, 119, 0.2); color: #ffc777; }
+        .activity-action.login_failed { background: rgba(255, 117, 127, 0.2); color: #ff757f; }
+
+        .activity-user {
+            color: var(--fg-dim);
+            min-width: 80px;
+        }
+
+        .activity-resource {
+            flex: 1;
+            color: var(--fg);
+        }
+
+        .activity-time {
+            color: var(--fg-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Modal styles for password reset */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            z-index: 1001;
+            min-width: 300px;
+        }
+
+        .modal h3 {
+            margin: 0 0 1rem 0;
+            color: var(--accent-blue);
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-med);
+            color: var(--fg);
+            margin-bottom: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+
+    <!-- Password Reset Modal -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal" id="passwordModal">
+        <h3>Reset Password</h3>
+        <input type="password" id="newPassword" placeholder="Enter new password">
+        <div class="modal-buttons">
+            <button class="button secondary" onclick="closePasswordModal()">Cancel</button>
+            <button class="button" onclick="confirmResetPassword()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        // Chart data from server
+        const dailyData = {{ activity_stats.daily_activities | tojson | safe }};
+        const hourlyData = {{ hourly_stats | tojson | safe }};
+        const activityByType = {{ activity_stats.activities_by_action | tojson | safe }};
+
+        // Daily Activity Chart
+        new Chart(document.getElementById('dailyActivityChart'), {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => d.date),
+                datasets: [{
+                    label: 'Daily Activities',
+                    data: dailyData.map(d => d.count),
+                    borderColor: '#7aa2f7',
+                    backgroundColor: 'rgba(122, 162, 247, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Hourly Activity Chart
+        const hourLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
+        const hourValues = Array(24).fill(0);
+        hourlyData.forEach(h => { hourValues[h.hour] = h.count; });
+
+        new Chart(document.getElementById('hourlyActivityChart'), {
+            type: 'bar',
+            data: {
+                labels: hourLabels,
+                datasets: [{
+                    label: 'Hourly Activities',
+                    data: hourValues,
+                    backgroundColor: '#9ece6a',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Activity Types Chart
+        const typeLabels = Object.keys(activityByType);
+        const typeValues = Object.values(activityByType);
+        const colors = ['#7aa2f7', '#9ece6a', '#bb9af7', '#ffc777', '#ff757f', '#73daca'];
+
+        new Chart(document.getElementById('activityTypesChart'), {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeValues,
+                    backgroundColor: colors.slice(0, typeLabels.length)
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#c0caf5' }
+                    }
+                }
+            }
+        });
+
+        // User Management Functions
+        function toggleEdit(userId) {
+            const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+            const inputs = row.querySelectorAll('.edit-field');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+
+            inputs.forEach(input => {
+                input.disabled = !input.disabled;
+            });
+            editBtn.style.display = editBtn.style.display === 'none' ? 'inline-block' : 'none';
+            saveBtn.style.display = saveBtn.style.display === 'none' ? 'inline-block' : 'none';
+        }
+
+        async function saveUser(userId) {
+            const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+            const username = row.querySelector('[data-field="username"]').value;
+            const email = row.querySelector('[data-field="email"]').value;
+
+            try {
+                const response = await fetch(`/admin/api/users/${userId}?username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`, {
+                    method: 'PUT'
+                });
+
+                if (response.ok) {
+                    toggleEdit(userId);
+                    alert('User updated successfully');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (err) {
+                alert('Error updating user');
+            }
+        }
+
+        async function toggleActive(userId, currentState) {
+            try {
+                const response = await fetch(`/admin/api/users/${userId}?is_active=${!currentState}`, {
+                    method: 'PUT'
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (err) {
+                alert('Error toggling user status');
+            }
+        }
+
+        async function toggleAdmin(userId, currentState) {
+            if (!confirm(currentState ? 'Remove admin privileges?' : 'Grant admin privileges?')) return;
+
+            try {
+                const response = await fetch(`/admin/api/users/${userId}?is_admin=${!currentState}`, {
+                    method: 'PUT'
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (err) {
+                alert('Error toggling admin status');
+            }
+        }
+
+        let resetUserId = null;
+
+        function resetPassword(userId) {
+            resetUserId = userId;
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('passwordModal').style.display = 'block';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newPassword').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('passwordModal').style.display = 'none';
+            resetUserId = null;
+        }
+
+        async function confirmResetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (!newPassword || newPassword.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('new_password', newPassword);
+
+            try {
+                const response = await fetch(`/admin/api/users/${resetUserId}/reset-password`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    closePasswordModal();
+                    alert('Password reset successfully');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (err) {
+                alert('Error resetting password');
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"? This will delete all their data.`)) return;
+
+            try {
+                const response = await fetch(`/admin/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (err) {
+                alert('Error deleting user');
+            }
+        }
+
+        // Close modal on overlay click
+        document.getElementById('modalOverlay').addEventListener('click', closePasswordModal);
+    </script>
+</body>
+</html>

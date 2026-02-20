@@ -33,6 +33,7 @@ class PasteCreate(PasteBase):
     is_private: bool = False  # Whether paste is PIN-protected
     pin: Optional[str] = None  # PIN for encryption (not stored directly)
     encryption_salt: Optional[str] = None  # Pre-generated salt for encryption
+    expires_at: Optional[datetime] = None  # Auto-destruction time
 
 class Paste(PasteBase):
     id: int

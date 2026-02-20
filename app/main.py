@@ -87,6 +87,11 @@ import os
 SESSION_SECRET = os.getenv("SECRET_KEY", "change-this-secret-in-production")
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
+# Admin credentials from environment (configurable)
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin7492")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@paste-shaver.local")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -105,8 +110,13 @@ async def startup_event():
         deleted_count = crud.delete_old_pastes(db, days=AUTO_DELETE_DAYS)
         if deleted_count > 0:
             print(f"Startup cleanup: deleted {deleted_count} old pastes")
+        
+        # Create default admin user if it doesn't exist
+        admin_user = crud.create_admin_user(db, ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD)
+        if admin_user:
+            print(f"Admin user '{ADMIN_USERNAME}' is ready")
     except Exception as e:
-        print(f"Startup cleanup error: {e}")
+        print(f"Startup error: {e}")
     finally:
         db.close()
 
@@ -132,10 +142,29 @@ def login(
 ):
     user = crud.authenticate_user(db, username, password)
     if not user:
+        # Log failed login attempt (without storing password)
+        crud.log_activity(
+            db=db,
+            action="login_failed",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            extra_data={"username_attempted": username[:20]}  # Truncate for safety
+        )
         return templates.TemplateResponse("login.html", {
             "request": request,
             "error": "Incorrect username or password"
         })
+    
+    # Log successful login
+    crud.log_activity(
+        db=db,
+        action="login",
+        user_id=user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        resource_type="user",
+        resource_id=str(user.id)
+    )
     
     access_token_expires = timedelta(days=30)
     access_token = create_access_token(
@@ -196,6 +225,17 @@ def signup(
     # Create user
     user_create = schemas.UserCreate(username=username, email=email, password=password)
     user = crud.create_user(db, user_create)
+    
+    # Log signup activity
+    crud.log_activity(
+        db=db,
+        action="signup",
+        user_id=user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        resource_type="user",
+        resource_id=str(user.id)
+    )
     
     # Auto-login after signup
     access_token_expires = timedelta(days=30)
@@ -881,16 +921,32 @@ def show_create_form(request: Request, current_user = Depends(get_current_user_f
 
 @app.post("/create", response_class=RedirectResponse)
 async def create_paste_entry(
+    request: Request,
     db: Session = Depends(get_db),
     content: Optional[str] = Form(None),
     files: List[UploadFile] = File(...),
     is_private: bool = Form(False),
     pin: Optional[str] = Form(None),
+    expires_in: str = Form("2d"),  # Default: 2 days
     current_user = Depends(get_current_user_from_request)
 ):
     # Validate private paste has PIN
     if is_private and (not pin or len(pin) < 4):
         raise HTTPException(status_code=400, detail="Private pastes require a PIN of at least 4 characters.")
+    
+    # Calculate expires_at based on expires_in parameter
+    expires_at = None
+    if expires_in != "never":
+        duration_map = {
+            "15m": timedelta(minutes=15),
+            "1h": timedelta(hours=1),
+            "1d": timedelta(days=1),
+            "2d": timedelta(days=2),
+            "1w": timedelta(weeks=1),
+            "1M": timedelta(days=30),
+        }
+        if expires_in in duration_map:
+            expires_at = datetime.utcnow() + duration_map[expires_in]
     
     upload_files = [file for file in files if file.filename]
     if not content and not upload_files:
@@ -944,10 +1000,171 @@ async def create_paste_entry(
         user_id=user_id,
         is_private=is_private,
         pin=pin,
-        encryption_salt=encryption_salt  # Pass pre-generated salt
+        encryption_salt=encryption_salt,  # Pass pre-generated salt
+        expires_at=expires_at  # Auto-destruction time
     )
-    crud.create_paste(db=db, paste=paste_data)
+    db_paste = crud.create_paste(db=db, paste=paste_data)
+    
+    # Log paste creation activity
+    crud.log_activity(
+        db=db,
+        action="paste_create",
+        user_id=user_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        resource_type="paste",
+        resource_id=slug,
+        extra_data={
+            "is_private": is_private,
+            "has_files": len(saved_filenames) > 0,
+            "file_count": len(saved_filenames),
+            "expires_in": expires_in
+        }
+    )
+    
     return RedirectResponse(url=f"/{slug}", status_code=status.HTTP_303_SEE_OTHER)
+
+def require_admin(current_user = Depends(get_current_user_from_request)):
+    """Dependency to require admin access"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_from_request)
+):
+    """Admin dashboard page"""
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get statistics
+    total_users = crud.get_total_users_count(db)
+    total_pastes = crud.get_total_pastes_count(db)
+    total_groups = crud.get_total_groups_count(db)
+    
+    # Get activity stats
+    activity_stats = crud.get_activity_stats(db, days=30)
+    hourly_stats = crud.get_hourly_stats(db, hours=24)
+    
+    # Get all users
+    users = crud.get_all_users(db)
+    
+    # Get recent activities
+    recent_activities = crud.get_recent_activities(db, limit=50)
+    
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "current_user": current_user,
+        "total_users": total_users,
+        "total_pastes": total_pastes,
+        "total_groups": total_groups,
+        "activity_stats": activity_stats,
+        "hourly_stats": hourly_stats,
+        "users": users,
+        "recent_activities": recent_activities
+    })
+
+@app.get("/admin/api/stats")
+def admin_get_stats(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
+):
+    """API endpoint for admin statistics"""
+    activity_stats = crud.get_activity_stats(db, days=days)
+    hourly_stats = crud.get_hourly_stats(db, hours=24)
+    
+    return {
+        "activity_stats": activity_stats,
+        "hourly_stats": hourly_stats,
+        "total_users": crud.get_total_users_count(db),
+        "total_pastes": crud.get_total_pastes_count(db),
+        "total_groups": crud.get_total_groups_count(db)
+    }
+
+@app.get("/admin/api/users")
+def admin_get_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
+):
+    """API endpoint to get all users"""
+    users = crud.get_all_users(db, skip=skip, limit=limit)
+    return {
+        "users": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "is_active": u.is_active,
+                "is_admin": u.is_admin,
+                "created_at": u.created_at.isoformat(),
+                "paste_count": len(u.pastes)
+            }
+            for u in users
+        ]
+    }
+
+@app.put("/admin/api/users/{user_id}")
+def admin_update_user(
+    user_id: int,
+    username: Optional[str] = None,
+    email: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    is_admin: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
+):
+    """Update user details"""
+    # Prevent admin from demoting themselves
+    if user_id == admin_user.id and is_admin == False:
+        raise HTTPException(status_code=400, detail="Cannot remove your own admin privileges")
+    
+    user = crud.update_user(db, user_id, username=username, email=email, 
+                           is_active=is_active, is_admin=is_admin)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"status": "success", "user_id": user_id}
+
+@app.delete("/admin/api/users/{user_id}")
+def admin_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
+):
+    """Delete a user"""
+    # Prevent admin from deleting themselves
+    if user_id == admin_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    success = crud.delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"status": "success", "message": "User deleted"}
+
+@app.post("/admin/api/users/{user_id}/reset-password")
+def admin_reset_password(
+    user_id: int,
+    new_password: str = Form(...),
+    db: Session = Depends(get_db),
+    admin_user = Depends(require_admin)
+):
+    """Reset user password"""
+    user = crud.reset_user_password(db, user_id, new_password)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"status": "success", "message": "Password reset successfully"}
 
 @app.get("/{slug}", response_class=HTMLResponse)
 def view_paste(
@@ -956,6 +1173,7 @@ def view_paste(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user_from_request)
 ):
+    
     db_paste = crud.get_paste_by_slug(db, slug=slug)
     if db_paste is None:
         raise HTTPException(status_code=404, detail="Paste not found")
@@ -996,6 +1214,17 @@ def view_paste(
             display_content = crud.decrypt_paste_content(db_paste, pin)
         except ValueError:
             display_content = "[Encrypted content - Enter PIN to view]"
+    
+    # Log paste view activity
+    crud.log_activity(
+        db=db,
+        action="paste_view",
+        user_id=current_user.id if current_user else None,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        resource_type="paste",
+        resource_id=slug
+    )
     
     return templates.TemplateResponse("paste.html", {
         "request": request, 
