@@ -6,7 +6,7 @@ services:
     container_name: pastebin-app
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8008:8000"
     volumes:
       - ./data:/app/data          # Database persistence
       - ./uploads:/app/uploads    # File uploads persistence

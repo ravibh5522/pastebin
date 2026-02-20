@@ -12,6 +12,7 @@ from fastapi import (FastAPI, Request, Form, Depends, HTTPException, status,
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
@@ -19,10 +20,12 @@ from pydantic import BaseModel
 
 from . import crud, schemas
 from .database import SessionLocal, engine, create_db_and_tables
+from . import database as models
 from .auth import (create_access_token, get_current_user_from_request, 
                    require_user, get_db, get_current_user_from_token, get_user_from_token_string)
 from .websocket_manager import manager
 from .background_tasks import start_background_tasks
+from . import encryption
 
 # Request models for admin endpoints
 class SetActingLeaderRequest(BaseModel):
@@ -61,12 +64,29 @@ WORD_LIST = [
     "sad", "sap", "saw", "sea", "sew", "sky", "sly", "sod", "son", "sow", "soy",
     "spy", "sun", "tag", "tan", "tap", "tar", "tea", "ten", "tin", "tip", "top",
     "toy", "tub", "tug", "van", "vet", "wag", "war", "was", "wax", "web", "wet",
-    "wig", "win", "yak", "yam", "yap", "yen", "yet", "zip", "zoo"
+    "wig", "win", "yak", "yam", "yap", "yen", "yet", "zip", "zoo",
+    # 100 more common words
+    "air", "arm", "art", "bag", "bar", "bay", "bed", "bet", "bid", "bin", "bit",
+    "bow", "boy", "bus", "cab", "can", "cap", "car", "cop", "cot", "cow", "cry",
+    "cup", "cut", "day", "dew", "dip", "dot", "dry", "ear", "eat", "end", "fan",
+    "fat", "fee", "fin", "fit", "fix", "fun", "gap", "gas", "gem", "get", "gig",
+    "gum", "gun", "gut", "gym", "ham", "hat", "hay", "hit", "hop", "hot", "hug",
+    "jam", "jar", "jaw", "jet", "job", "joy", "kid", "kit", "lab", "lad", "lag",
+    "lap", "law", "lay", "lid", "lit", "log", "lot", "mad", "man", "map", "mat",
+    "men", "mix", "mob", "mom", "mop", "mud", "nap", "net", "nod", "oak", "odd",
+    "off", "old", "one", "our", "out", "owl", "pad", "pal", "pan", "pat", "paw",
+    "pay", "pea", "pet", "pie", "pig", "pin", "pit", "pop", "pot", "pro", "pub"
 ]
 
 # --- App Setup ---
 create_db_and_tables()
 app = FastAPI(title="Paste Shaver")
+
+# Add session middleware for temporary PIN storage
+import os
+SESSION_SECRET = os.getenv("SECRET_KEY", "change-this-secret-in-production")
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -74,10 +94,21 @@ templates = Jinja2Templates(directory="app/templates")
 UPLOADS_DIR.mkdir(exist_ok=True)
 CHAT_UPLOADS_DIR.mkdir(exist_ok=True)
 
-# Start background tasks
+# Start background tasks and cleanup
 @app.on_event("startup")
 async def startup_event():
     start_background_tasks()
+    
+    # Run initial cleanup on startup
+    db = SessionLocal()
+    try:
+        deleted_count = crud.delete_old_pastes(db, days=AUTO_DELETE_DAYS)
+        if deleted_count > 0:
+            print(f"Startup cleanup: deleted {deleted_count} old pastes")
+    except Exception as e:
+        print(f"Startup cleanup error: {e}")
+    finally:
+        db.close()
 
 # --- Authentication Endpoints ---
 @app.get("/login", response_class=HTMLResponse)
@@ -208,6 +239,71 @@ def health_check():
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat()
         }
+
+# --- SEO Endpoints ---
+@app.get("/robots.txt", response_class=Response)
+def robots_txt():
+    """Serve robots.txt for search engine crawlers"""
+    content = """# Paste Shaver Robots.txt
+User-agent: *
+Allow: /
+Allow: /search
+Allow: /login
+Allow: /signup
+
+# Disallow private areas
+Disallow: /dashboard
+Disallow: /chat/
+Disallow: /logout
+Disallow: /cleanup
+Disallow: /api/
+
+# Sitemap
+Sitemap: /sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
+
+@app.get("/sitemap.xml", response_class=Response)
+def sitemap_xml(request: Request, db: Session = Depends(get_db)):
+    """Generate dynamic sitemap.xml for SEO"""
+    base_url = str(request.base_url).rstrip('/')
+    
+    # Static pages
+    static_pages = [
+        {"loc": "/", "priority": "1.0", "changefreq": "daily"},
+        {"loc": "/search", "priority": "0.8", "changefreq": "daily"},
+        {"loc": "/login", "priority": "0.6", "changefreq": "monthly"},
+        {"loc": "/signup", "priority": "0.6", "changefreq": "monthly"},
+    ]
+    
+    # Get recent public (non-private) pastes for sitemap
+    recent_pastes = db.query(models.Paste).filter(
+        models.Paste.is_private == False
+    ).order_by(models.Paste.created_at.desc()).limit(500).all()
+    
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    # Add static pages
+    for page in static_pages:
+        xml_content += f'''  <url>
+    <loc>{base_url}{page["loc"]}</loc>
+    <changefreq>{page["changefreq"]}</changefreq>
+    <priority>{page["priority"]}</priority>
+  </url>\n'''
+    
+    # Add paste pages
+    for paste in recent_pastes:
+        xml_content += f'''  <url>
+    <loc>{base_url}/{paste.slug}</loc>
+    <lastmod>{paste.created_at.strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.5</priority>
+  </url>\n'''
+    
+    xml_content += '</urlset>'
+    
+    return Response(content=xml_content, media_type="application/xml")
 
 @app.post("/logout")
 def logout():
@@ -767,8 +863,14 @@ async def create_paste_entry(
     db: Session = Depends(get_db),
     content: Optional[str] = Form(None),
     files: List[UploadFile] = File(...),
+    is_private: bool = Form(False),
+    pin: Optional[str] = Form(None),
     current_user = Depends(get_current_user_from_request)
 ):
+    # Validate private paste has PIN
+    if is_private and (not pin or len(pin) < 4):
+        raise HTTPException(status_code=400, detail="Private pastes require a PIN of at least 4 characters.")
+    
     upload_files = [file for file in files if file.filename]
     if not content and not upload_files:
         raise HTTPException(status_code=400, detail="Cannot create an empty paste with no files.")
@@ -778,7 +880,14 @@ async def create_paste_entry(
         slug = "-".join(random.sample(WORD_LIST, 3))
         if not crud.get_paste_by_slug(db, slug=slug):
             break
+    
     saved_filenames = []
+    encryption_salt = None
+    
+    # Generate encryption salt for private pastes (used for both text and files)
+    if is_private and pin:
+        encryption_salt = encryption.generate_salt()
+    
     if upload_files:
         paste_upload_dir = UPLOADS_DIR / slug
         paste_upload_dir.mkdir(parents=True, exist_ok=True)
@@ -791,14 +900,31 @@ async def create_paste_entry(
                 safe_filename = f"unnamed_file_{random.randint(1000, 9999)}"
             file_path = paste_upload_dir / safe_filename
             try:
+                file_content = file.file.read()
+                
+                # Encrypt file content for private pastes
+                if is_private and pin and encryption_salt:
+                    file_content = encryption.encrypt_file(file_content, pin, encryption_salt)
+                    # Add .enc extension to encrypted files
+                    file_path = paste_upload_dir / f"{safe_filename}.enc"
+                
                 with file_path.open("wb") as buffer:
-                    shutil.copyfileobj(file.file, buffer)
+                    buffer.write(file_content)
                 saved_filenames.append(safe_filename)
             finally:
                 file.file.close()
+    
     filenames_str = ",".join(saved_filenames) if saved_filenames else None
     user_id = current_user.id if current_user else None
-    paste_data = schemas.PasteCreate(slug=slug, content=content, filenames=filenames_str, user_id=user_id)
+    paste_data = schemas.PasteCreate(
+        slug=slug, 
+        content=content, 
+        filenames=filenames_str, 
+        user_id=user_id,
+        is_private=is_private,
+        pin=pin,
+        encryption_salt=encryption_salt  # Pass pre-generated salt
+    )
     crud.create_paste(db=db, paste=paste_data)
     return RedirectResponse(url=f"/{slug}", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -813,6 +939,91 @@ def view_paste(
     if db_paste is None:
         raise HTTPException(status_code=404, detail="Paste not found")
     
+    # Check if this is a private paste and show PIN entry form
+    pin = None
+    if db_paste.is_private:
+        # Check if PIN is stored in session (temporary unlock)
+        pin = request.session.get(f"paste_pin_{slug}")
+        
+        if not pin:
+            return templates.TemplateResponse("paste_locked.html", {
+                "request": request,
+                "paste": db_paste,
+                "current_user": current_user
+            })
+    
+    files_data = []
+    if db_paste.filenames:
+        for filename in db_paste.filenames.split(','):
+            file_extension = Path(filename).suffix.lower()
+            files_data.append({
+                "name": filename,
+                "is_image": file_extension in IMAGE_EXTENSIONS and not db_paste.is_private,
+                "is_editable": file_extension in EDITABLE_EXTENSIONS and not db_paste.is_private,
+                "is_encrypted": db_paste.is_private
+            })
+    
+    # Check if current user has saved this paste
+    is_saved = False
+    if current_user:
+        is_saved = crud.is_paste_saved_by_user(db, current_user.id, db_paste.id)
+    
+    # Decrypt content for private pastes with valid PIN
+    display_content = db_paste.content
+    if db_paste.is_private and pin:
+        try:
+            display_content = crud.decrypt_paste_content(db_paste, pin)
+        except ValueError:
+            display_content = "[Encrypted content - Enter PIN to view]"
+    
+    return templates.TemplateResponse("paste.html", {
+        "request": request, 
+        "paste": db_paste, 
+        "files_data": files_data,
+        "current_user": current_user,
+        "is_saved": is_saved,
+        "display_content": display_content,
+        "pin": pin  # Pass PIN for file downloads
+    })
+
+@app.post("/{slug}/unlock")
+def unlock_private_paste(
+    request: Request,
+    slug: str,
+    pin: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_from_request)
+):
+    """Verify PIN and unlock private paste."""
+    db_paste = crud.get_paste_by_slug(db, slug=slug)
+    if db_paste is None:
+        raise HTTPException(status_code=404, detail="Paste not found")
+    
+    if not db_paste.is_private:
+        return RedirectResponse(url=f"/{slug}", status_code=status.HTTP_303_SEE_OTHER)
+    
+    if not crud.verify_paste_pin(db_paste, pin):
+        return templates.TemplateResponse("paste_locked.html", {
+            "request": request,
+            "paste": db_paste,
+            "current_user": current_user,
+            "error": "Invalid PIN. Please try again."
+        })
+    
+    # Decrypt content
+    try:
+        decrypted_content = crud.decrypt_paste_content(db_paste, pin)
+    except ValueError:
+        return templates.TemplateResponse("paste_locked.html", {
+            "request": request,
+            "paste": db_paste,
+            "current_user": current_user,
+            "error": "Decryption failed. Invalid PIN."
+        })
+    
+    # Store PIN in session for this paste (temporary unlock)
+    request.session[f"paste_pin_{slug}"] = pin
+    
     files_data = []
     if db_paste.filenames:
         for filename in db_paste.filenames.split(','):
@@ -820,10 +1031,10 @@ def view_paste(
             files_data.append({
                 "name": filename,
                 "is_image": file_extension in IMAGE_EXTENSIONS,
-                "is_editable": file_extension in EDITABLE_EXTENSIONS # Pass this to the template
+                "is_editable": file_extension in EDITABLE_EXTENSIONS,
+                "is_encrypted": True
             })
     
-    # Check if current user has saved this paste
     is_saved = False
     if current_user:
         is_saved = crud.is_paste_saved_by_user(db, current_user.id, db_paste.id)
@@ -833,8 +1044,52 @@ def view_paste(
         "paste": db_paste, 
         "files_data": files_data,
         "current_user": current_user,
-        "is_saved": is_saved
+        "is_saved": is_saved,
+        "display_content": decrypted_content,
+        "pin": pin  # Pass PIN for file downloads
     })
+
+@app.get("/{slug}/download/{filename}")
+async def download_encrypted_file(
+    slug: str,
+    filename: str,
+    pin: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Download (and decrypt if needed) a file from a paste."""
+    db_paste = crud.get_paste_by_slug(db, slug=slug)
+    if db_paste is None:
+        raise HTTPException(status_code=404, detail="Paste not found")
+    
+    if db_paste.is_private:
+        if not pin:
+            raise HTTPException(status_code=401, detail="PIN required for encrypted files")
+        if not crud.verify_paste_pin(db_paste, pin):
+            raise HTTPException(status_code=401, detail="Invalid PIN")
+        
+        # Read encrypted file
+        encrypted_path = UPLOADS_DIR / slug / f"{filename}.enc"
+        if not encrypted_path.is_file():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        encrypted_content = encrypted_path.read_bytes()
+        try:
+            decrypted_content = encryption.decrypt_file(
+                encrypted_content, pin, db_paste.encryption_salt
+            )
+            return Response(
+                content=decrypted_content,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Decryption failed")
+    
+    # Non-encrypted file
+    file_path = UPLOADS_DIR / slug / filename
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, filename=filename)
 
 # VVV NEW ENDPOINT TO SERVE RAW FILE CONTENT FOR THE EDITOR VVV
 @app.get("/content/{slug}/{filename}")
@@ -883,18 +1138,6 @@ def cleanup_old_pastes(db: Session = Depends(get_db)):
     deleted_count = crud.delete_old_pastes(db, days=AUTO_DELETE_DAYS)
     return {"deleted": deleted_count, "message": f"Cleaned up {deleted_count} old pastes"}
 
-# Startup event to run cleanup
-@app.on_event("startup")
-async def startup_event():
-    """Run cleanup on startup"""
-    db = SessionLocal()
-    try:
-        deleted_count = crud.delete_old_pastes(db, days=AUTO_DELETE_DAYS)
-        print(f"Startup cleanup: deleted {deleted_count} old pastes")
-    except Exception as e:
-        print(f"Startup cleanup error: {e}")
-    finally:
-        db.close()
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8008)

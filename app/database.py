@@ -60,6 +60,11 @@ class Paste(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Optional for anonymous pastes
     
+    # Private paste fields
+    is_private = Column(Boolean, default=False)  # Whether paste is PIN-protected
+    pin_hash = Column(String, nullable=True)  # Hashed PIN for decryption
+    encryption_salt = Column(String, nullable=True)  # Salt used for key derivation
+    
     # Relationships
     owner = relationship("User", back_populates="pastes")
     saved_by = relationship("SavedPaste", back_populates="paste")

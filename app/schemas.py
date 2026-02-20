@@ -30,16 +30,24 @@ class PasteBase(BaseModel):
 class PasteCreate(PasteBase):
     slug: str
     user_id: Optional[int] = None  # Optional for anonymous pastes
+    is_private: bool = False  # Whether paste is PIN-protected
+    pin: Optional[str] = None  # PIN for encryption (not stored directly)
+    encryption_salt: Optional[str] = None  # Pre-generated salt for encryption
 
 class Paste(PasteBase):
     id: int
     slug: str
     created_at: datetime
     user_id: Optional[int] = None
+    is_private: bool = False
     owner: Optional[User] = None
 
     class Config:
         from_attributes = True
+
+# PIN verification for private pastes
+class PinVerify(BaseModel):
+    pin: str
 
 # Saved Paste Schemas
 class SavedPasteCreate(BaseModel):

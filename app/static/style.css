@@ -12,6 +12,11 @@
     --border-color: #3b4048;
     --font-sans: 'Inter', sans-serif;
     --font-mono: 'Fira Code', monospace;
+    
+    /* Additional variables for compatibility */
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --surface-color: #24283b;
 }
 /* ... (existing styles for body, container, header, h2, buttons, form, etc. remain the same) ... */
 body {

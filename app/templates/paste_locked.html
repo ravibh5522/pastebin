@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Private Paste - {{ paste.slug }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                {% if current_user %}
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                    <span class="user-info">{{ current_user.username }}</span>
+                    <form action="/logout" method="post" style="display: inline;" id="logoutForm">
+                        <button type="submit" class="button logout">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="locked-paste-container">
+            <div class="lock-icon">🔒</div>
+            <h2>Private Paste</h2>
+            <p class="paste-slug">{{ paste.slug }}</p>
+            <p class="lock-description">This paste is protected with a PIN. Enter the PIN to view its contents.</p>
+            
+            {% if error %}
+            <div class="error-message">
+                <span class="error-icon">⚠️</span>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/{{ paste.slug }}/unlock" method="post" class="pin-form">
+                <div class="pin-input-group">
+                    <label for="pin">Enter PIN:</label>
+                    <input 
+                        type="password" 
+                        id="pin" 
+                        name="pin" 
+                        placeholder="Enter PIN..." 
+                        required 
+                        minlength="4"
+                        autofocus
+                        autocomplete="off"
+                    >
+                </div>
+                <button type="submit" class="button unlock-btn">🔓 Unlock Paste</button>
+            </form>
+
+            <div class="paste-meta">
+                <span>Created: {{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                {% if paste.owner %}
+                    <span>by {{ paste.owner.username }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .locked-paste-container {
+            max-width: 500px;
+            margin: 4rem auto;
+            padding: 3rem;
+            background: var(--bg-med);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .lock-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .locked-paste-container h2 {
+            color: var(--accent-purple);
+            margin-bottom: 0.5rem;
+            border: none;
+        }
+
+        .paste-slug {
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .lock-description {
+            color: var(--fg-dim);
+            margin-bottom: 2rem;
+        }
+
+        .error-message {
+            background: rgba(255, 87, 87, 0.1);
+            border: 1px solid #ff5757;
+            color: #ff5757;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .pin-form {
+            margin-bottom: 2rem;
+        }
+
+        .pin-input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .pin-input-group label {
+            display: block;
+            color: var(--fg);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .pin-input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-dark);
+            color: var(--fg);
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 0.3em;
+            font-family: var(--font-mono);
+        }
+
+        .pin-input-group input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(187, 154, 247, 0.3);
+        }
+
+        .pin-input-group input::placeholder {
+            letter-spacing: normal;
+            color: var(--bg-light);
+        }
+
+        .unlock-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            background: var(--accent-purple) !important;
+        }
+
+        .unlock-btn:hover {
+            background: #a78bfa !important;
+        }
+
+        .paste-meta {
+            color: var(--fg-dim);
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .user-info {
+            color: var(--fg);
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+
+        .logout {
+            background: #ff757f !important;
+            border-color: #ff757f !important;
+        }
+
+        .logout:hover {
+            background: #ff6b75 !important;
+        }
+
+        @media (max-width: 768px) {
+            .locked-paste-container {
+                margin: 2rem auto;
+                padding: 2rem;
+            }
+        }
+    </style>
+    
+    <script src="/static/session.js"></script>
+</body>
+</html>

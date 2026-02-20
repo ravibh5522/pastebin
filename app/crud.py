@@ -3,6 +3,7 @@ from sqlalchemy import and_, or_, desc
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from . import database as models, schemas
+from . import encryption
 import shutil
 import random
 import string
@@ -51,17 +52,50 @@ def get_paste_by_slug(db: Session, slug: str):
 
 def create_paste(db: Session, paste: schemas.PasteCreate):
     """Create a new paste record in the database."""
-    # This now includes filenames and user_id
+    # Handle encryption for private pastes
+    content = paste.content
+    pin_hash = None
+    encryption_salt = paste.encryption_salt  # Use pre-generated salt if provided
+    
+    if paste.is_private and paste.pin:
+        pin_hash = encryption.hash_pin(paste.pin)
+        
+        # Generate salt only if not provided
+        if not encryption_salt:
+            encryption_salt = encryption.generate_salt()
+        
+        if content:
+            content = encryption.encrypt_content(content, paste.pin, encryption_salt)
+    
     db_paste = models.Paste(
         slug=paste.slug, 
-        content=paste.content, 
+        content=content, 
         filenames=paste.filenames,
-        user_id=paste.user_id
+        user_id=paste.user_id,
+        is_private=paste.is_private,
+        pin_hash=pin_hash,
+        encryption_salt=encryption_salt
     )
     db.add(db_paste)
     db.commit()
     db.refresh(db_paste)
     return db_paste
+
+def decrypt_paste_content(paste, pin: str) -> str:
+    """Decrypt paste content with the provided PIN."""
+    if not paste.is_private or not paste.content:
+        return paste.content
+    
+    if not encryption.verify_pin(pin, paste.pin_hash):
+        raise ValueError("Invalid PIN")
+    
+    return encryption.decrypt_content(paste.content, pin, paste.encryption_salt)
+
+def verify_paste_pin(paste, pin: str) -> bool:
+    """Verify if the provided PIN is correct for the paste."""
+    if not paste.is_private:
+        return True
+    return encryption.verify_pin(pin, paste.pin_hash)
 
 def get_user_pastes(db: Session, user_id: int):
     """Get all pastes created by a user"""
@@ -100,15 +134,18 @@ def search_saved_pastes(db: Session, user_id: int, search_query: str):
     ).order_by(models.SavedPaste.saved_at.desc()).all()
 
 def search_all_pastes(db: Session, search_query: str, limit: int = 50):
-    """Search through all pastes by slug or content"""
+    """Search through all PUBLIC pastes by slug or content"""
     if not search_query.strip():
         return []
     
     search_term = f"%{search_query.strip()}%"
     return db.query(models.Paste).filter(
-        or_(
-            models.Paste.slug.ilike(search_term),
-            models.Paste.content.ilike(search_term)
+        and_(
+            models.Paste.is_private == False,  # Only search public pastes
+            or_(
+                models.Paste.slug.ilike(search_term),
+                models.Paste.content.ilike(search_term)
+            )
         )
     ).order_by(models.Paste.created_at.desc()).limit(limit).all()
 

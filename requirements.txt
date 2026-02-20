@@ -5,8 +5,12 @@ jinja2
 python-multipart
 Werkzeug
 passlib[bcrypt]
+bcrypt==4.0.1
 python-jose[cryptography]
 email-validator
 python-multipart
 websockets
 aiofiles
+cryptography
+itsdangerous
+starlette

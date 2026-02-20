@@ -40,7 +40,18 @@
             </div>
         </div>
 
-        {% if paste.content %}
+        {% if paste.is_private %}
+        <div class="private-badge">
+            <span class="badge-icon">🔒</span>
+            <span class="badge-text">Private Paste (Encrypted)</span>
+        </div>
+        {% endif %}
+
+        {% if display_content %}
+            <h2>Text Content</h2>
+            <!-- Note: no language class, so highlight.js auto-detects -->
+            <pre><code>{{ display_content }}</code></pre>
+        {% elif paste.content %}
             <h2>Text Content</h2>
             <!-- Note: no language class, so highlight.js auto-detects -->
             <pre><code>{{ paste.content }}</code></pre>
@@ -52,8 +63,13 @@
                 {% for file in files_data %}
                 <div class="file-card">
                     <div class="card-preview">
-                        {% if file.is_image %}
+                        {% if file.is_image and not file.is_encrypted %}
                             <img src="/uploads/{{ paste.slug }}/{{ file.name }}" alt="Preview of {{ file.name }}">
+                        {% elif file.is_encrypted %}
+                            <div class="icon-placeholder encrypted">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1C8.676 1 6 3.676 6 7V9H4C2.895 9 2 9.895 2 11V21C2 22.105 2.895 23 4 23H20C21.105 23 22 22.105 22 21V11C22 9.895 21.105 9 20 9H18V7C18 3.676 15.324 1 12 1ZM12 3C14.276 3 16 4.724 16 7V9H8V7C8 4.724 9.724 3 12 3ZM12 14C13.1 14 14 14.9 14 16C14 17.1 13.1 18 12 18C10.9 18 10 17.1 10 16C10 14.9 10.9 14 12 14Z"></path></svg>
+                                <span>🔒 Encrypted</span>
+                            </div>
                         {% else %}
                             <div class="icon-placeholder">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V8H3ZM21 4C21 2.89543 20.1046 2 19 2H5C3.89543 2 3 2.89543 3 4V6H21V4Z"></path></svg>
@@ -64,15 +80,20 @@
                     <div class="card-footer">
                         <span class="filename" title="{{ file.name }}">{{ file.name }}</span>
                         <div class="card-actions">
-                            <!-- VVV NEW: Conditional View Button VVV -->
-                            {% if file.is_editable %}
+                            {% if file.is_editable and not file.is_encrypted %}
                             <button class="view-btn" data-slug="{{ paste.slug }}" data-filename="{{ file.name }}" title="View & Edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C17.5228 3 22 7.47715 22 12C22 16.5228 17.5228 21 12 21C6.47715 21 2 16.5228 2 12C2 7.47715 6.47715 3 12 3ZM12 19C16.4183 19 20 15.4183 20 11C20 6.58172 16.4183 3 12 3C7.58172 3 4 6.58172 4 11C4 15.4183 7.58172 19 12 19ZM12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z"></path></svg>
                             </button>
                             {% endif %}
-                            <a href="/uploads/{{ paste.slug }}/{{ file.name }}" class="download-btn" download title="Download">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16L6 10H10V4H14V10H18L12 16ZM4 18V20H20V18H4Z"></path></svg>
-                            </a>
+                            {% if file.is_encrypted %}
+                                <a href="/{{ paste.slug }}/download/{{ file.name }}?pin={{ pin }}" class="download-btn" title="Download (Encrypted)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16L6 10H10V4H14V10H18L12 16ZM4 18V20H20V18H4Z"></path></svg>
+                                </a>
+                            {% else %}
+                                <a href="/uploads/{{ paste.slug }}/{{ file.name }}" class="download-btn" download title="Download">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16L6 10H10V4H14V10H18L12 16ZM4 18V20H20V18H4Z"></path></svg>
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -249,6 +270,37 @@
         
         .saved:hover {
             background: #4ade80 !important;
+        }
+
+        .private-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(187, 154, 247, 0.15);
+            border: 1px solid var(--accent-purple);
+            color: var(--accent-purple);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .badge-icon {
+            font-size: 1rem;
+        }
+
+        .icon-placeholder.encrypted {
+            color: var(--accent-purple);
+        }
+
+        .icon-placeholder.encrypted svg {
+            color: var(--accent-purple);
+        }
+
+        .icon-placeholder.encrypted span {
+            font-size: 0.9rem;
+            color: var(--accent-purple);
         }
         
         @media (max-width: 768px) {

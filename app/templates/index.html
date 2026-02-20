@@ -3,7 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paste Shaver - New Paste</title>
+    <title>Paste Shaver - Free Online Pastebin | Share Code & Text Securely</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Paste Shaver is a free, secure online pastebin for sharing code snippets, text, and files. Features AES-256 encryption, syntax highlighting, and group chat. No registration required.">
+    <meta name="keywords" content="pastebin, code sharing, text sharing, encrypted paste, secure pastebin, code snippets, developer tools, file sharing, syntax highlighting, free pastebin">
+    <meta name="author" content="Paste Shaver">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="Paste Shaver - Free Secure Pastebin">
+    <meta property="og:description" content="Share code snippets and text securely with AES-256 encryption. Free, fast, and no registration required.">
+    <meta property="og:image" content="/static/og-image.svg">
+    <meta property="og:site_name" content="Paste Shaver">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Paste Shaver - Free Secure Pastebin">
+    <meta name="twitter:description" content="Share code snippets and text securely with AES-256 encryption. Free, fast, and no registration required.">
+    <meta name="twitter:image" content="/static/og-image.svg">
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Paste Shaver",
+        "description": "Free, secure online pastebin for sharing code snippets, text, and files with AES-256 encryption",
+        "url": "{{ request.url }}",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "All",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "AES-256 Encryption",
+            "Syntax Highlighting",
+            "File Upload Support",
+            "PIN Protected Pastes",
+            "Group Chat",
+            "No Registration Required"
+        ]
+    }
+    </script>
+    
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -26,9 +74,15 @@
             </div>
         </div>
         
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h2 class="hero-title">Share Code & Text <span class="highlight">Securely</span></h2>
+            <p class="hero-subtitle">Free pastebin with military-grade encryption. No registration required.</p>
+        </section>
+        
         <form action="/create" method="post" enctype="multipart/form-data">
             <h2>Text Content</h2>
-            <textarea name="content" id="content" placeholder="Paste your text or code here... (optional if uploading files)"></textarea>
+            <textarea name="content" id="content" placeholder="Paste your text or code here... (optional if uploading files)" aria-label="Paste content"></textarea>
 
             <h2>File Attachments</h2>
             <label for="files" class="file-upload-area">
@@ -37,6 +91,28 @@
             </label>
             <input type="file" name="files" id="files" multiple>
             <div id="file-info"></div>
+
+            <h2>Privacy Settings</h2>
+            <div class="privacy-settings">
+                <div class="privacy-toggle">
+                    <input type="checkbox" id="is_private" name="is_private" value="true">
+                    <label for="is_private">
+                        <span class="toggle-icon">🔒</span>
+                        <span class="toggle-text">Make this paste private (PIN protected)</span>
+                    </label>
+                </div>
+                
+                <div id="pin-section" class="pin-section" style="display: none;">
+                    <label for="pin">Set PIN (min 4 characters):</label>
+                    <input type="password" id="pin" name="pin" placeholder="Enter PIN..." minlength="4">
+                    <div class="pin-confirm">
+                        <label for="pin_confirm">Confirm PIN:</label>
+                        <input type="password" id="pin_confirm" placeholder="Confirm PIN...">
+                    </div>
+                    <div id="pin-error" class="pin-error" style="display: none;"></div>
+                    <p class="pin-warning">⚠️ Remember your PIN! It cannot be recovered if lost.</p>
+                </div>
+            </div>
 
             <button type="submit">Create Paste</button>
         </form>
@@ -51,6 +127,164 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Homepage Content Section -->
+    <section class="homepage-content">
+        <div class="container">
+            <!-- Features Section -->
+            <div class="features-section">
+                <h2 class="section-title">Why Choose Paste Shaver?</h2>
+                <div class="features-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon">🔐</div>
+                        <h3>Military-Grade Encryption</h3>
+                        <p>PIN-protected pastes use AES-256-GCM encryption. Your sensitive data stays private and secure.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Lightning Fast</h3>
+                        <p>Create and share pastes in seconds. No ads, no waiting, just instant sharing.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3>Syntax Highlighting</h3>
+                        <p>Automatic language detection with beautiful syntax highlighting for 100+ programming languages.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">📁</div>
+                        <h3>File Attachments</h3>
+                        <p>Upload up to {{ max_files }} files per paste. Perfect for sharing code with assets.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">💬</div>
+                        <h3>Real-time Chat</h3>
+                        <p>Create groups and collaborate with team members using our built-in WebSocket chat.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Powerful Search</h3>
+                        <p>Find any public paste instantly with our full-text search. Never lose your code again.</p>
+                    </article>
+                </div>
+            </div>
+
+            <!-- How It Works Section -->
+            <div class="how-it-works">
+                <h2 class="section-title">How It Works</h2>
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Paste Your Content</h3>
+                        <p>Enter code, text, or upload files in the form above</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Set Privacy (Optional)</h3>
+                        <p>Enable PIN protection for sensitive content</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Share Your Link</h3>
+                        <p>Get a unique URL like paste-shaver.com/fox-egg-jug</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-section">
+                <div class="stat-item">
+                    <div class="stat-number">256-bit</div>
+                    <div class="stat-label">AES Encryption</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ max_size }}MB</div>
+                    <div class="stat-label">Max File Size</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100+</div>
+                    <div class="stat-label">Languages Supported</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">Free</div>
+                    <div class="stat-label">Forever</div>
+                </div>
+            </div>
+
+            <!-- Use Cases Section -->
+            <div class="use-cases-section">
+                <h2 class="section-title">Perfect For</h2>
+                <div class="use-cases-grid">
+                    <div class="use-case">
+                        <span class="use-case-icon">👨‍💻</span>
+                        <span class="use-case-text">Developers sharing code snippets</span>
+                    </div>
+                    <div class="use-case">
+                        <span class="use-case-icon">🐛</span>
+                        <span class="use-case-text">Bug reports with stack traces</span>
+                    </div>
+                    <div class="use-case">
+                        <span class="use-case-icon">📝</span>
+                        <span class="use-case-text">Configuration files & logs</span>
+                    </div>
+                    <div class="use-case">
+                        <span class="use-case-icon">🎓</span>
+                        <span class="use-case-text">Students sharing homework</span>
+                    </div>
+                    <div class="use-case">
+                        <span class="use-case-icon">🔒</span>
+                        <span class="use-case-text">Secure credential sharing</span>
+                    </div>
+                    <div class="use-case">
+                        <span class="use-case-icon">👥</span>
+                        <span class="use-case-text">Team collaboration</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <h2>Ready to Share?</h2>
+                <p>Start pasting above or create an account to save your pastes forever.</p>
+                <div class="cta-buttons">
+                    <a href="#content" class="button">Start Pasting</a>
+                    {% if not current_user %}
+                    <a href="/signup" class="button secondary">Create Free Account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Paste Shaver</h3>
+                    <p>Free, secure code and text sharing since 2024</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <a href="/">New Paste</a>
+                    <a href="/search">Search</a>
+                    <a href="/signup">Sign Up</a>
+                    <a href="/login">Login</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Features</h4>
+                    <span>AES-256 Encryption</span>
+                    <span>Syntax Highlighting</span>
+                    <span>File Uploads</span>
+                    <span>Group Chat</span>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Paste Shaver. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <style>
         .user-info {
@@ -90,12 +324,430 @@
         .user-note a:hover {
             text-decoration: underline;
         }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 1rem;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            color: var(--fg);
+            margin: 0 0 0.5rem 0;
+            border: none;
+            padding: 0;
+        }
+
+        .hero-title .highlight {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            color: var(--fg-dim);
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        /* Homepage Content Section */
+        .homepage-content {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-med) 100%);
+            padding: 4rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--accent-green);
+            margin-bottom: 2.5rem;
+            border: none;
+            padding: 0;
+        }
+
+        /* Features Grid */
+        .features-section {
+            margin-bottom: 5rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-purple);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            color: var(--accent-blue);
+            margin: 0 0 0.75rem 0;
+            font-size: 1.25rem;
+        }
+
+        .feature-card p {
+            color: var(--fg-dim);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            margin-bottom: 5rem;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            min-width: 200px;
+            max-width: 250px;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--bg-dark);
+            margin: 0 auto 1rem auto;
+        }
+
+        .step h3 {
+            color: var(--fg);
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .step p {
+            color: var(--fg-dim);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .step-arrow {
+            font-size: 2rem;
+            color: var(--accent-purple);
+        }
+
+        @media (max-width: 768px) {
+            .step-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 5rem;
+            padding: 3rem;
+            background: var(--bg-dark);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--fg-dim);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Use Cases Section */
+        .use-cases-section {
+            margin-bottom: 5rem;
+        }
+
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .use-case {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+
+        .use-case:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .use-case-icon {
+            font-size: 1.5rem;
+        }
+
+        .use-case-text {
+            color: var(--fg);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-section h2 {
+            color: var(--bg-dark);
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            border: none;
+            padding: 0;
+        }
+
+        .cta-section p {
+            color: var(--bg-med);
+            margin: 0 0 1.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-section .button {
+            background: var(--bg-dark);
+            color: var(--fg);
+        }
+
+        .cta-section .button:hover {
+            background: var(--bg-med);
+        }
+
+        .cta-section .button.secondary {
+            background: transparent;
+            border: 2px solid var(--bg-dark);
+            color: var(--bg-dark);
+        }
+
+        .cta-section .button.secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer */
+        .site-footer {
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-color);
+            padding: 3rem 1rem 1.5rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        .footer-brand h3 {
+            color: var(--accent-blue);
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .footer-brand p {
+            color: var(--fg-dim);
+            margin: 0;
+        }
+
+        .footer-links h4 {
+            color: var(--fg);
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+        }
+
+        .footer-links a, .footer-links span {
+            display: block;
+            color: var(--fg-dim);
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-blue);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+            text-align: center;
+        }
+
+        .footer-bottom p {
+            color: var(--fg-dim);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Privacy Settings Styles */
+        .privacy-settings {
+            margin-bottom: 2rem;
+            background: var(--bg-med);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .privacy-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .privacy-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .privacy-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--fg);
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+        }
+
+        .pin-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pin-section label {
+            display: block;
+            color: var(--fg);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .pin-section input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-dark);
+            color: var(--fg);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .pin-section input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 3px rgba(187, 154, 247, 0.3);
+        }
+
+        .pin-confirm {
+            margin-top: 0.5rem;
+        }
+
+        .pin-warning {
+            color: #ffc107;
+            font-size: 0.9rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pin-error {
+            color: #ff757f;
+            background: rgba(255, 117, 127, 0.1);
+            border: 1px solid #ff757f;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
     </style>
 
     <script src="/static/session.js"></script>
     <script>
         const fileInput = document.getElementById('files');
         const fileInfo = document.getElementById('file-info');
+        const isPrivateCheckbox = document.getElementById('is_private');
+        const pinSection = document.getElementById('pin-section');
+        const pinInput = document.getElementById('pin');
+        const pinConfirmInput = document.getElementById('pin_confirm');
+        const pinError = document.getElementById('pin-error');
+        const form = document.querySelector('form');
 
         fileInput.addEventListener('change', () => {
             const numFiles = fileInput.files.length;
@@ -104,6 +756,52 @@
             } else {
                 fileInfo.textContent = '';
             }
+        });
+
+        // Toggle PIN section visibility
+        isPrivateCheckbox.addEventListener('change', () => {
+            if (isPrivateCheckbox.checked) {
+                pinSection.style.display = 'block';
+                pinInput.required = true;
+            } else {
+                pinSection.style.display = 'none';
+                pinInput.required = false;
+                pinInput.value = '';
+                pinConfirmInput.value = '';
+            }
+        });
+
+        // Validate PIN on form submit
+        form.addEventListener('submit', (e) => {
+            if (isPrivateCheckbox.checked) {
+                const pin = pinInput.value;
+                const pinConfirm = pinConfirmInput.value;
+
+                if (pin.length < 4) {
+                    e.preventDefault();
+                    pinError.textContent = 'PIN must be at least 4 characters.';
+                    pinError.style.display = 'block';
+                    pinInput.focus();
+                    return;
+                }
+
+                if (pin !== pinConfirm) {
+                    e.preventDefault();
+                    pinError.textContent = 'PINs do not match. Please try again.';
+                    pinError.style.display = 'block';
+                    pinConfirmInput.focus();
+                    return;
+                }
+
+                pinError.style.display = 'none';
+            }
+        });
+
+        // Clear error on input
+        [pinInput, pinConfirmInput].forEach(input => {
+            input.addEventListener('input', () => {
+                pinError.style.display = 'none';
+            });
         });
     </script>
 </body>

@@ -84,13 +84,18 @@
                 {% if user_pastes %}
                     <div class="paste-grid">
                         {% for paste in user_pastes %}
-                        <div class="paste-card">
+                        <div class="paste-card {% if paste.is_private %}private{% endif %}">
                             <div class="paste-header">
-                                <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                                <a href="/{{ paste.slug }}" class="paste-title">
+                                    {% if paste.is_private %}<span class="private-icon">🔒</span>{% endif %}
+                                    {{ paste.slug }}
+                                </a>
                                 <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
                             <div class="paste-preview">
-                                {% if paste.content %}
+                                {% if paste.is_private %}
+                                    <div class="encrypted-notice">🔐 Encrypted content</div>
+                                {% elif paste.content %}
                                     <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
                                 {% endif %}
                                 {% if paste.filenames %}
@@ -349,6 +354,22 @@
             margin-top: 0.5rem;
             font-size: 0.85rem;
             color: var(--accent-green);
+        }
+        
+        /* Private paste styles */
+        .paste-card.private {
+            border-color: var(--accent-purple);
+            background: linear-gradient(135deg, var(--surface-color) 0%, rgba(187, 154, 247, 0.05) 100%);
+        }
+        
+        .private-icon {
+            margin-right: 0.25rem;
+        }
+        
+        .encrypted-notice {
+            color: var(--accent-purple);
+            font-style: italic;
+            font-size: 0.9rem;
         }
         
         .empty-state {

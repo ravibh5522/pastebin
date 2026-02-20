@@ -1,0 +1,15 @@
+# Paste Shaver Robots.txt
+User-agent: *
+Allow: /
+Allow: /search
+Allow: /login
+Allow: /signup
+
+# Disallow private areas
+Disallow: /dashboard
+Disallow: /chat/
+Disallow: /logout
+Disallow: /cleanup
+
+# Sitemap
+Sitemap: /sitemap.xml
