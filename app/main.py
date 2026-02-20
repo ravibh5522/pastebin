@@ -242,9 +242,18 @@ def health_check():
 
 # --- SEO Endpoints ---
 @app.get("/robots.txt", response_class=Response)
-def robots_txt():
+def robots_txt(request: Request):
     """Serve robots.txt for search engine crawlers"""
-    content = """# Paste Shaver Robots.txt
+    # Get base URL for sitemap reference
+    forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
+    forwarded_host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host")
+    
+    if forwarded_host:
+        base_url = f"{forwarded_proto}://{forwarded_host}"
+    else:
+        base_url = str(request.base_url).rstrip('/')
+    
+    content = f"""# Paste Shaver Robots.txt
 User-agent: *
 Allow: /
 Allow: /search
@@ -259,14 +268,26 @@ Disallow: /cleanup
 Disallow: /api/
 
 # Sitemap
-Sitemap: /sitemap.xml
+Sitemap: {base_url}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
+
+@app.get("/favicon.ico")
+def favicon():
+    """Redirect favicon.ico requests to the SVG favicon"""
+    return RedirectResponse(url="/static/favicon.svg", status_code=301)
 
 @app.get("/sitemap.xml", response_class=Response)
 def sitemap_xml(request: Request, db: Session = Depends(get_db)):
     """Generate dynamic sitemap.xml for SEO"""
-    base_url = str(request.base_url).rstrip('/')
+    # Get base URL - prefer X-Forwarded headers for reverse proxy/cloudflare
+    forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
+    forwarded_host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host")
+    
+    if forwarded_host:
+        base_url = f"{forwarded_proto}://{forwarded_host}"
+    else:
+        base_url = str(request.base_url).rstrip('/')
     
     # Static pages
     static_pages = [
