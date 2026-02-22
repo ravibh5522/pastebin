@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMCA Policy - Paste Shaver</title>
+    <meta name="description" content="Paste Shaver DMCA Policy. Learn how to submit a copyright takedown request to remove infringing content from our pastebin service.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                {% if current_user %}
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+                <a href="/" class="button">New Paste</a>
+            </div>
+        </div>
+
+        <div class="legal-page">
+            <h2>DMCA Policy &amp; Takedown Requests</h2>
+            <p class="last-updated">Last updated: February 22, 2026</p>
+
+            <div class="dmca-notice-banner">
+                <span class="dmca-icon">⚠️</span>
+                <div>
+                    <strong>Report infringing content quickly:</strong> Include the paste URL and describe the copyright violation in your report. We aim to process valid requests within <strong>24-48 hours</strong>.
+                </div>
+            </div>
+
+            <section class="legal-section">
+                <h3>1. Our Commitment</h3>
+                <p>Paste Shaver respects the intellectual property rights of others. In accordance with the Digital Millennium Copyright Act of 1998 (17 U.S.C. § 512), we will respond promptly to valid claims of copyright infringement. We reserve the right to disable or remove access to content alleged to be infringing.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>2. Prohibited Content</h3>
+                <p>The following is strictly prohibited on Paste Shaver:</p>
+                <ul>
+                    <li>Copyrighted source code, software, or scripts posted without authorization</li>
+                    <li>Licensed text, books, articles, or documentation posted without permission</li>
+                    <li>Proprietary configuration files, API keys, or credentials belonging to others</li>
+                    <li>Any content that infringes upon the intellectual property rights of any third party</li>
+                    <li>Malware, exploits, or malicious code</li>
+                    <li>Personally identifiable information (doxing)</li>
+                    <li>Content that is illegal under applicable law</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h3>3. How to Submit a DMCA Takedown Request</h3>
+                <p>To file a valid DMCA notification, provide the following information in writing:</p>
+                <ol>
+                    <li><strong>Identification of the copyrighted work</strong> you claim has been infringed (or a representative list if multiple works)</li>
+                    <li><strong>The URL(s)</strong> of the paste(s) on Paste Shaver that contain the infringing material</li>
+                    <li>Your <strong>contact information</strong>: full name, address, telephone number, and email address</li>
+                    <li>A statement that you have a <strong>good faith belief</strong> that use of the material is not authorized by the copyright owner, its agent, or the law</li>
+                    <li>A statement that the information in the notification is <strong>accurate</strong>, and under penalty of perjury, that you are authorized to act on behalf of the copyright owner</li>
+                    <li>Your <strong>physical or electronic signature</strong></li>
+                </ol>
+            </section>
+
+            <section class="legal-section">
+                <h3>4. How to Report</h3>
+                <p>Submit your DMCA request through your user dashboard using the <strong>"Report Content"</strong> option, or paste the following form in your message:</p>
+                <div class="dmca-form-template">
+                    <pre>DMCA Takedown Request
+
+Infringing Paste URL(s):
+[Paste the full URL here, e.g., https://your-domain.com/fox-egg-jug]
+
+Description of Copyrighted Work:
+[Describe the original work being infringed]
+
+I have a good faith belief that use of the copyrighted materials described above is not authorized by the copyright owner, its agent, or the law.
+
+I swear, under penalty of perjury, that the information in this notification is accurate and that I am the copyright owner or am authorized to act on behalf of the copyright owner.
+
+Name:
+Email:
+Date:</pre>
+                </div>
+            </section>
+
+            <section class="legal-section">
+                <h3>5. Counter-Notification</h3>
+                <p>If you believe that content removed (or to which access was disabled) is not infringing, or that you have authorization from the copyright owner, you may send a counter-notification. A valid counter-notification must include:</p>
+                <ol>
+                    <li>Your physical or electronic signature</li>
+                    <li>Identification of the material that was removed and the location where it appeared before removal</li>
+                    <li>A statement under penalty of perjury that you have a good faith belief that the material was removed by mistake</li>
+                    <li>Your name, address, telephone number, email, and a statement that you consent to jurisdiction in your federal district</li>
+                </ol>
+            </section>
+
+            <section class="legal-section">
+                <h3>6. Repeat Infringers</h3>
+                <p>Paste Shaver maintains a policy of terminating accounts of users who are repeat infringers in appropriate circumstances. We reserve the right to terminate any account at our discretion.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>7. False Claims</h3>
+                <p>Under Section 512(f) of the DMCA, any person who knowingly materially misrepresents that material is infringing may be subject to liability for damages, including costs and attorneys' fees. Please ensure your claim is valid before submitting.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>8. Other Abuse Reports</h3>
+                <p>To report content that violates our terms for non-copyright reasons (malware, doxing, illegal content), use the Report button on any paste page, or contact us through the dashboard.</p>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer" style="margin-top: 3rem;">
+            <div class="container">
+                <div class="footer-bottom">
+                    <p>&copy; 2024-2026 Paste Shaver. &nbsp;
+                       <a href="/privacy">Privacy Policy</a> &nbsp;|&nbsp;
+                       <a href="/dmca">DMCA</a> &nbsp;|&nbsp;
+                       <a href="/terms">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <style>
+        .legal-page {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .legal-page h2 {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+        }
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .dmca-notice-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .dmca-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .legal-section {
+            margin-bottom: 2rem;
+        }
+        .legal-section h3 {
+            color: var(--accent-green);
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .legal-section p, .legal-section li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        .legal-section ul, .legal-section ol {
+            padding-left: 1.5rem;
+        }
+        .legal-section a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        .legal-section a:hover { text-decoration: underline; }
+        .dmca-form-template {
+            background: var(--bg-dark, #1a1b26);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+        .dmca-form-template pre {
+            margin: 0;
+            color: var(--fg-dim);
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.7;
+        }
+    </style>
+    <script src="/static/session.js"></script>
+</body>
+</html>

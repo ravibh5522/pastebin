@@ -56,6 +56,13 @@
                     </label>
                 </div>
                 
+                <div class="privacy-notice">
+                    <p>By creating an account, you agree to our
+                        <a href="/terms" target="_blank">Terms of Service</a> and
+                        <a href="/privacy" target="_blank">Privacy Policy</a>.
+                    </p>
+                </div>
+
                 <button type="submit">Create Account</button>
             </form>
             
@@ -150,6 +157,20 @@
         }
     </style>
     
+    <style>
+        .privacy-notice {
+            background: rgba(122, 162, 247, 0.06);
+            border: 1px solid rgba(122, 162, 247, 0.25);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .privacy-notice p { margin: 0; color: var(--text-secondary); }
+        .privacy-notice a { color: var(--accent-blue); text-decoration: none; }
+        .privacy-notice a:hover { text-decoration: underline; }
+    </style>
     <script src="/static/session.js"></script>
 </body>
 </html>

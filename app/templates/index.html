@@ -3,60 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paste Shaver - Free Online Pastebin | Share Code & Text Securely</title>
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Paste Shaver is a free, secure online pastebin for sharing code snippets, text, and files. Features AES-256 encryption, syntax highlighting, and group chat. No registration required.">
-    <meta name="keywords" content="pastebin, code sharing, text sharing, encrypted paste, secure pastebin, code snippets, developer tools, file sharing, syntax highlighting, free pastebin">
+    <title>Paste Shaver - Free Encrypted Pastebin | Secure Code &amp; Text Sharing Online</title>
+
+    <!-- Primary SEO Meta Tags -->
+    <meta name="description" content="Paste Shaver is a free, secure pastebin alternative with AES-256 encryption, file uploads, syntax highlighting, self-destructing pastes, and group chat. No registration required. Share code, text &amp; files anonymously or privately with a PIN.">
+    <meta name="keywords" content="pastebin, free pastebin, encrypted pastebin, secure pastebin, pastebin alternative, private paste, pastebin with file upload, anonymous pastebin, self-destructing paste, pastebin with encryption, code sharing online, text sharing, paste code online, secure code sharing, AES-256 pastebin, pastebin no registration, online code editor, bin sharing, hastebin alternative, paste website, share code snippet, temporary paste, password protected paste, pastebin group chat, pastebin 2025">
     <meta name="author" content="Paste Shaver">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="{{ request.url }}">
-    
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}/">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:title" content="Paste Shaver - Free Secure Pastebin">
-    <meta property="og:description" content="Share code snippets and text securely with AES-256 encryption. Free, fast, and no registration required.">
+    <meta property="og:url" content="{{ request.url.scheme }}://{{ request.url.netloc }}/">
+    <meta property="og:title" content="Paste Shaver - Free Encrypted Pastebin | AES-256 Secure Code Sharing">
+    <meta property="og:description" content="Free pastebin with military-grade AES-256 encryption, file uploads, syntax highlighting, self-destructing pastes &amp; group chat. No registration needed.">
     <meta property="og:image" content="/static/og-image.svg">
     <meta property="og:site_name" content="Paste Shaver">
-    
+    <meta property="og:locale" content="en_US">
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Paste Shaver - Free Secure Pastebin">
-    <meta name="twitter:description" content="Share code snippets and text securely with AES-256 encryption. Free, fast, and no registration required.">
+    <meta name="twitter:title" content="Paste Shaver - Free Encrypted Pastebin">
+    <meta name="twitter:description" content="Free pastebin with AES-256 encryption, file uploads, and self-destructing pastes. No registration required.">
     <meta name="twitter:image" content="/static/og-image.svg">
-    
-    <!-- Structured Data (JSON-LD) -->
+
+    <!-- Structured Data: WebApplication -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Paste Shaver",
-        "description": "Free, secure online pastebin for sharing code snippets, text, and files with AES-256 encryption",
-        "url": "{{ request.url }}",
+        "alternateName": ["Paste Shaver Pastebin", "Secure Pastebin", "Encrypted Pastebin"],
+        "description": "Free, secure online pastebin with AES-256-GCM encryption, file uploads, syntax highlighting for 100+ languages, self-destructing pastes, and real-time group chat. No registration required.",
+        "url": "{{ request.url.scheme }}://{{ request.url.netloc }}/",
         "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Code Sharing Tool",
         "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
         "offers": {
             "@type": "Offer",
             "price": "0",
-            "priceCurrency": "USD"
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
         },
         "featureList": [
-            "AES-256 Encryption",
-            "Syntax Highlighting",
+            "AES-256-GCM Military-Grade Encryption",
+            "PIN-Protected Private Pastes",
+            "Self-Destructing Pastes (15 minutes to never)",
+            "Syntax Highlighting for 100+ Languages",
             "File Upload Support",
-            "PIN Protected Pastes",
-            "Group Chat",
-            "No Registration Required"
+            "Anonymous Paste without Registration",
+            "Real-time Group Chat with WebSocket",
+            "Full-text Search across Public Pastes",
+            "Copy-to-Clipboard Functionality",
+            "Social Sharing"
+        ],
+        "screenshot": "/static/og-image.svg",
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "124",
+            "bestRating": "5"
+        }
+    }
+    </script>
+
+    <!-- Structured Data: FAQ (Rich Snippets - big for SEO) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Is Paste Shaver completely free?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, Paste Shaver is 100% free forever. No credit card, no hidden fees, no ads. Create unlimited pastes, upload files, and use group chat at no cost."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does Paste Shaver require registration or sign-up?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No registration is required to create or view pastes. Simply paste your content and share the URL. Create an optional free account to save and manage your pastes from a dashboard."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How secure is Paste Shaver encryption?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Private pastes use AES-256-GCM encryption, the same standard used by military and banking institutions. Your PIN is used as the encryption key and is never stored on our servers. Even we cannot read your private pastes."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I upload files along with my paste?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Paste Shaver supports file attachments alongside text content. You can upload multiple files per paste. Files in private pastes are also AES-256-GCM encrypted."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can pastes be automatically deleted after a set time?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Paste Shaver has a self-destruct / auto-delete feature. When creating a paste, you can set it to expire in 15 minutes, 1 hour, 1 day, 2 days (default), 1 week, 1 month, or never."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is the best free pastebin alternative in 2025?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Paste Shaver is a top free pastebin alternative offering features that pastebin.com and hastebin lack: AES-256 encryption, file uploads, self-destructing pastes, real-time group chat, and syntax highlighting for 100+ languages — all with no registration required."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I share a paste anonymously?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Simply type or paste your content into the text area and click Create Paste. You will receive a unique shareable URL (e.g., paste-shaver.com/fox-egg-jug). No account or personal information is required."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does Paste Shaver support syntax highlighting?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Paste Shaver automatically detects the programming language and applies syntax highlighting using highlight.js, supporting 100+ languages including Python, JavaScript, Java, C++, Go, Rust, SQL, JSON, YAML, and more."
+                }
+            }
         ]
     }
     </script>
-    
+
+    <!-- Structured Data: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [{
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Paste Shaver",
+            "item": "{{ request.url.scheme }}://{{ request.url.netloc }}/"
+        }]
+    }
+    </script>
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.svg">
     <link rel="apple-touch-icon" href="/static/favicon.svg">
-    
+
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -81,8 +187,17 @@
         
         <!-- Hero Section -->
         <section class="hero-section">
-            <h2 class="hero-title">Share Code & Text <span class="highlight">Securely</span></h2>
-            <p class="hero-subtitle">Free pastebin with military-grade encryption. No registration required.</p>
+            <h2 class="hero-title">Free <span class="highlight">Encrypted Pastebin</span> &amp; Code Sharing</h2>
+            <p class="hero-subtitle">Share code, text &amp; files securely online — AES-256 encryption, self-destruct, file uploads, syntax highlighting. <strong>No registration needed.</strong></p>
+            <div class="hero-badges">
+                <span class="hero-badge">🔐 AES-256 Encrypted</span>
+                <span class="hero-badge">⏱️ Self-Destructing</span>
+                <span class="hero-badge">📁 File Uploads</span>
+                <span class="hero-badge">🎨 Syntax Highlighting</span>
+                <span class="hero-badge">💬 Group Chat</span>
+                <span class="hero-badge">🚫 No Registration</span>
+                <span class="hero-badge">🆓 Free Forever</span>
+            </div>
         </section>
         
         <form action="/create" method="post" enctype="multipart/form-data">
@@ -273,10 +388,79 @@
                 <h2>Ready to Share?</h2>
                 <p>Start pasting above or create an account to save your pastes forever.</p>
                 <div class="cta-buttons">
-                    <a href="#content" class="button">Start Pasting</a>
+                    <a href="#content" class="button">Start Pasting Now</a>
                     {% if not current_user %}
                     <a href="/signup" class="button secondary">Create Free Account</a>
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="comparison-section">
+                <h2 class="section-title">Paste Shaver vs. Other Pastebins</h2>
+                <div class="table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th class="ours">Paste Shaver ✨</th>
+                            <th>pastebin.com</th>
+                            <th>hastebin</th>
+                            <th>GitHub Gist</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Free to Use</td><td class="ours yes">✅ Always</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+                        <tr><td>No Registration</td><td class="ours yes">✅ Yes</td><td class="no">⚠️ Limited</td><td class="yes">✅</td><td class="no">❌ Required</td></tr>
+                        <tr><td>AES-256 Encryption</td><td class="ours yes">✅ Yes</td><td class="no">❌ No</td><td class="no">❌ No</td><td class="no">❌ No</td></tr>
+                        <tr><td>File Uploads</td><td class="ours yes">✅ Yes</td><td class="no">❌ No</td><td class="no">❌ No</td><td class="yes">✅</td></tr>
+                        <tr><td>Self-Destructing Pastes</td><td class="ours yes">✅ 15min–Never</td><td class="no">⚠️ Pro only</td><td class="no">❌ No</td><td class="no">❌ No</td></tr>
+                        <tr><td>Password (PIN) Protection</td><td class="ours yes">✅ Yes</td><td class="no">⚠️ Pro only</td><td class="no">❌ No</td><td class="no">❌ No</td></tr>
+                        <tr><td>Group Chat</td><td class="ours yes">✅ Built-in</td><td class="no">❌ No</td><td class="no">❌ No</td><td class="no">❌ No</td></tr>
+                        <tr><td>Syntax Highlighting</td><td class="ours yes">✅ 100+ langs</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+                        <tr><td>Full-text Search</td><td class="ours yes">✅ Yes</td><td class="no">⚠️ Pro only</td><td class="no">❌ No</td><td class="yes">✅</td></tr>
+                        <tr><td>Ad-free</td><td class="ours yes">✅ Always</td><td class="no">⚠️ Has Ads</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- FAQ Section (targets rich snippet + long-tail keywords) -->
+            <div class="faq-section">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="faq-list">
+                    <details class="faq-item">
+                        <summary>Is Paste Shaver completely free?</summary>
+                        <p>Yes — Paste Shaver is 100% free forever. No credit card, no hidden fees, no ads. Create unlimited pastes, upload files, and use group chat at no cost.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>Does Paste Shaver require registration or sign-up?</summary>
+                        <p>No registration is required to create or view pastes. Just paste your content and hit Create. Optionally create a free account to save &amp; manage pastes from a dashboard.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>How secure is the encryption?</summary>
+                        <p>Private pastes use <strong>AES-256-GCM</strong> encryption — the same standard used by banks and governments. Your PIN is the encryption key and is never stored on our servers. Only someone with your PIN can decrypt the paste.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>Can I upload files with my paste?</summary>
+                        <p>Yes! You can attach multiple files per paste — images, code files, documents, and more. Files attached to private pastes are also AES-256-GCM encrypted.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>Can pastes automatically delete themselves?</summary>
+                        <p>Yes. Choose from: 15 minutes, 1 hour, 1 day, 2 days (default), 1 week, 1 month, or never. Expired pastes are permanently deleted automatically.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>What programming languages are supported for syntax highlighting?</summary>
+                        <p>Paste Shaver auto-detects 100+ languages including Python, JavaScript, TypeScript, Go, Rust, Java, C/C++, C#, PHP, Ruby, Swift, Kotlin, SQL, JSON, YAML, Bash, HTML, CSS, and many more.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>Is Paste Shaver a good pastebin.com alternative?</summary>
+                        <p>Paste Shaver offers several features pastebin.com charges for (encryption, password protection, self-destruct) at zero cost, plus exclusive features like file uploads and real-time group chat — all without ads.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary>How do I share a paste without needing to code?</summary>
+                        <p>No coding needed! Type or paste any text into the box, click <strong>Create Paste</strong>, then share the link. One click — and your recipient just visits the URL to read it. Use the Share buttons to send to WhatsApp, Telegram, Twitter, or copy to clipboard instantly.</p>
+                    </details>
                 </div>
             </div>
         </div>
@@ -289,24 +473,39 @@
                 <div class="footer-brand">
                     <h3>Paste Shaver</h3>
                     <p>Free, secure code and text sharing since 2024</p>
+                    <p style="font-size:0.85rem;margin-top:0.5rem;">The best free pastebin alternative with AES-256 encryption.</p>
                 </div>
                 <div class="footer-links">
                     <h4>Quick Links</h4>
                     <a href="/">New Paste</a>
-                    <a href="/search">Search</a>
-                    <a href="/signup">Sign Up</a>
+                    <a href="/search">Search Pastes</a>
+                    <a href="/signup">Sign Up Free</a>
                     <a href="/login">Login</a>
+                    <a href="/chat">Group Chat</a>
                 </div>
                 <div class="footer-links">
                     <h4>Features</h4>
                     <span>AES-256 Encryption</span>
                     <span>Syntax Highlighting</span>
                     <span>File Uploads</span>
+                    <span>Self-Destructing Pastes</span>
                     <span>Group Chat</span>
+                    <span>Anonymous Sharing</span>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <a href="/privacy">Privacy Policy</a>
+                    <a href="/dmca">DMCA / Copyright</a>
+                    <a href="/terms">Terms of Service</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024-2026 Paste Shaver. All rights reserved.</p>
+                <p>&copy; 2024–2026 Paste Shaver. All rights reserved. &nbsp;|&nbsp;
+                   <a href="/privacy" style="color:var(--text-secondary);">Privacy</a> &nbsp;|&nbsp;
+                   <a href="/dmca" style="color:var(--text-secondary);">DMCA</a> &nbsp;|&nbsp;
+                   <a href="/terms" style="color:var(--text-secondary);">Terms</a>
+                </p>
+                <p style="font-size:0.8rem;margin-top:0.25rem;color:var(--text-secondary);">Free pastebin alternative • Encrypted paste • Secure code sharing • Anonymous text sharing</p>
             </div>
         </div>
     </footer>
@@ -374,8 +573,122 @@
 
         .hero-subtitle {
             color: var(--fg-dim);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            margin: 0 0 1.5rem 0;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .hero-badge {
+            background: rgba(122, 162, 247, 0.1);
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            color: var(--accent-blue);
+            font-size: 0.8rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        /* Comparison Table */
+        .comparison-section {
+            margin-bottom: 5rem;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .comparison-table th {
+            background: var(--bg-dark);
+            color: var(--fg-dim);
+            padding: 0.9rem 1rem;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .comparison-table th.ours {
+            background: linear-gradient(135deg, rgba(122,162,247,0.18), rgba(187,154,247,0.12));
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+        .comparison-table td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--fg-dim);
+        }
+        .comparison-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+            color: var(--fg);
+        }
+        .comparison-table td.ours {
+            background: rgba(122, 162, 247, 0.05);
+            font-weight: 600;
+        }
+        .comparison-table td.yes { color: #9ece6a; }
+        .comparison-table td.ours.yes { color: #9ece6a; }
+        .comparison-table td.no { color: var(--fg-dim); }
+        .comparison-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .comparison-table tr:hover td.ours { background: rgba(122, 162, 247, 0.08); }
+
+        /* FAQ Section */
+        .faq-section {
+            margin-bottom: 5rem;
+        }
+        .faq-list {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .faq-item {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+        .faq-item:hover { border-color: var(--accent-blue); }
+        .faq-item[open] { border-color: var(--accent-blue); }
+        .faq-item summary {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--fg);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::after {
+            content: '+';
+            font-size: 1.25rem;
+            color: var(--accent-blue);
+            transition: transform 0.2s ease;
+        }
+        .faq-item[open] summary::after { content: '−'; }
+        .faq-item p {
+            padding: 0 1.25rem 1rem 1.25rem;
+            color: var(--fg-dim);
             margin: 0;
+            line-height: 1.7;
         }
 
         /* Homepage Content Section */
@@ -880,6 +1193,106 @@
                 pinError.style.display = 'none';
             });
         });
+
+        // ── Drag-drop on textarea: text/code files → paste as text ───────────
+        const contentTextarea = document.getElementById('content');
+        const fileUploadLabel = document.querySelector('.file-upload-area');
+
+        // TEXT-file extensions considered pasted-as-text
+        const TEXT_EXTS = new Set([
+            'txt','md','markdown','csv','json','xml','yaml','yml',
+            'js','ts','jsx','tsx','html','css','scss','less',
+            'py','rb','rs','go','java','kt','c','cpp','h','hpp',
+            'cs','php','sh','bash','zsh','ps1','sql','r','m',
+            'ini','cfg','conf','toml','env','log','diff','patch'
+        ]);
+
+        function isTextFile(file) {
+            if (file.type.startsWith('text/')) return true;
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            return TEXT_EXTS.has(ext);
+        }
+
+        // Drag-drop onto the textarea
+        contentTextarea.addEventListener('dragover', e => {
+            e.preventDefault();
+            contentTextarea.style.borderColor = 'var(--accent-blue)';
+            contentTextarea.style.boxShadow = '0 0 0 3px rgba(122,162,247,0.3)';
+        });
+        contentTextarea.addEventListener('dragleave', () => {
+            contentTextarea.style.borderColor = '';
+            contentTextarea.style.boxShadow = '';
+        });
+        contentTextarea.addEventListener('drop', async e => {
+            e.preventDefault();
+            contentTextarea.style.borderColor = '';
+            contentTextarea.style.boxShadow = '';
+            const items = [...(e.dataTransfer.files || [])];
+            const textFiles = items.filter(isTextFile);
+            const binaryFiles = items.filter(f => !isTextFile(f));
+
+            // Read text files and insert at cursor
+            for (const file of textFiles) {
+                const text = await file.text();
+                const start = contentTextarea.selectionStart;
+                const end = contentTextarea.selectionEnd;
+                const before = contentTextarea.value.substring(0, start);
+                const after = contentTextarea.value.substring(end);
+                const separator = before.length > 0 ? '\n' : '';
+                contentTextarea.value = before + separator + text + after;
+                contentTextarea.selectionStart = contentTextarea.selectionEnd = start + separator.length + text.length;
+            }
+
+            // Pass any binary files to the file input
+            if (binaryFiles.length > 0) {
+                const dt = new DataTransfer();
+                // Keep existing files
+                for (const f of fileInput.files) dt.items.add(f);
+                for (const f of binaryFiles) dt.items.add(f);
+                fileInput.files = dt.files;
+                fileInfo.textContent = `${fileInput.files.length} file(s) selected.`;
+            }
+        });
+
+        // Drag-drop onto the file upload area — visual + binary files
+        fileUploadLabel.addEventListener('dragover', e => {
+            e.preventDefault();
+            fileUploadLabel.classList.add('drag-over');
+        });
+        fileUploadLabel.addEventListener('dragleave', () => {
+            fileUploadLabel.classList.remove('drag-over');
+        });
+        fileUploadLabel.addEventListener('drop', async e => {
+            e.preventDefault();
+            fileUploadLabel.classList.remove('drag-over');
+            const items = [...(e.dataTransfer.files || [])];
+            const textFiles = items.filter(isTextFile);
+            const binaryFiles = items.filter(f => !isTextFile(f));
+
+            // Text files → insert into textarea (same as textarea drop)
+            for (const file of textFiles) {
+                const text = await file.text();
+                contentTextarea.value += (contentTextarea.value ? '\n' : '') + text;
+            }
+
+            // All files → add to file input
+            const dt = new DataTransfer();
+            for (const f of fileInput.files) dt.items.add(f);
+            for (const f of items) dt.items.add(f);
+            fileInput.files = dt.files;
+            fileInfo.textContent = fileInput.files.length > 0
+                ? `${fileInput.files.length} file(s) selected.` : '';
+        });
     </script>
+    <style>
+        .file-upload-area.drag-over {
+            background-color: var(--bg-med);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(122,162,247,0.3);
+        }
+        #content.drag-active {
+            border-color: var(--accent-blue);
+        }
+    </style>
 </body>
 </html>

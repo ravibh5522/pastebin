@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Paste Shaver</title>
+    <meta name="description" content="Paste Shaver's Privacy Policy explains how we collect, use, and protect your data when using our free encrypted pastebin service.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                {% if current_user %}
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+                <a href="/" class="button">New Paste</a>
+            </div>
+        </div>
+
+        <div class="legal-page">
+            <h2>Privacy Policy</h2>
+            <p class="last-updated">Last updated: February 22, 2026</p>
+
+            <section class="legal-section">
+                <h3>1. Overview</h3>
+                <p>Paste Shaver ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and service at <strong>Paste Shaver</strong>. Please read this policy carefully.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>2. Information We Collect</h3>
+                <h4>2.1 Information You Provide</h4>
+                <ul>
+                    <li><strong>Paste Content:</strong> Text, code snippets, and files you upload. Public pastes are accessible to anyone with the link. Private pastes are encrypted with your PIN using AES-256-GCM encryption.</li>
+                    <li><strong>Account Information:</strong> If you create an account, we collect your username, email address, and a hashed (bcrypt) password. We never store passwords in plain text.</li>
+                    <li><strong>Chat Messages:</strong> If you use our group chat feature, messages are stored on our servers.</li>
+                </ul>
+                <h4>2.2 Information Collected Automatically</h4>
+                <ul>
+                    <li><strong>Log Data:</strong> We collect anonymized activity logs including truncated IP addresses (first 3 octets only, e.g., "192.168.1.x"), browser type (truncated), and action type. We do NOT log full IP addresses.</li>
+                    <li><strong>Cookies &amp; Sessions:</strong> We use a session cookie to keep you logged in. No third-party tracking cookies are used.</li>
+                </ul>
+                <p><strong>We do NOT:</strong> Use Google Analytics, Facebook Pixel, or any third-party analytics tracking. We do not sell your data.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>3. How We Use Your Information</h3>
+                <ul>
+                    <li>To provide and operate the pastebin service</li>
+                    <li>To allow you to save, manage, and share pastes</li>
+                    <li>To send important service-related emails (e.g., password reset)</li>
+                    <li>To prevent abuse, spam, and illegal content</li>
+                    <li>To improve service performance and reliability</li>
+                    <li>To respond to DMCA takedown requests</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h3>4. Data Security</h3>
+                <p>We implement industry-standard security measures:</p>
+                <ul>
+                    <li>All passwords are hashed with <strong>bcrypt</strong> (never stored in plain text)</li>
+                    <li>Private pastes are encrypted with <strong>AES-256-GCM</strong> before storage</li>
+                    <li>HTTPS/TLS encryption for all data in transit</li>
+                    <li>Non-privileged application user with minimal filesystem permissions</li>
+                </ul>
+                <p>While we strive to use commercially acceptable means to protect your data, no method of transmission over the Internet is 100% secure.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>5. Data Retention &amp; Auto-Deletion</h3>
+                <p>Paste content is retained based on the expiration setting you choose at creation time (15 minutes to never). Expired pastes are automatically deleted. You may delete your own pastes at any time from your dashboard. Account deletion removes all associated pastes and data.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>6. Public Content</h3>
+                <p>Public pastes are visible to anyone and may be indexed by search engines. Do not post sensitive personal information, credentials, or private data in public pastes. Use the PIN-protection (private) feature for sensitive content.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>7. Third-Party Services</h3>
+                <p>We load the following third-party resources:</p>
+                <ul>
+                    <li><strong>cdnjs.cloudflare.com</strong> – Syntax highlighting library (highlight.js)</li>
+                    <li><strong>cdn.jsdelivr.net</strong> – Chart.js (admin panel only)</li>
+                    <li><strong>unpkg.com</strong> – CodeMirror editor</li>
+                </ul>
+                <p>These are static asset CDNs and do not track users. No social media SDKs or advertising networks are loaded.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>8. DMCA &amp; Content Removal</h3>
+                <p>We respond to valid DMCA takedown requests. See our <a href="/dmca">DMCA Policy</a> for details on how to report infringing content.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>9. Children's Privacy</h3>
+                <p>Our service is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us personal information, please contact us immediately.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>10. Your Rights</h3>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access your personal data</li>
+                    <li>Correct inaccurate data</li>
+                    <li>Request deletion of your account and all associated data</li>
+                    <li>Export your pastes</li>
+                </ul>
+                <p>To exercise these rights, please use your account dashboard or contact us.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>11. Changes to This Policy</h3>
+                <p>We may update this Privacy Policy from time to time. The updated date at the top of this page will reflect any changes. Continued use of the service after changes constitutes acceptance.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>12. Contact</h3>
+                <p>For privacy-related questions or data requests, please use the admin contact page or open a support request through our dashboard.</p>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="site-footer" style="margin-top: 3rem;">
+            <div class="container">
+                <div class="footer-bottom">
+                    <p>&copy; 2024-2026 Paste Shaver. &nbsp;
+                       <a href="/privacy">Privacy Policy</a> &nbsp;|&nbsp;
+                       <a href="/dmca">DMCA</a> &nbsp;|&nbsp;
+                       <a href="/terms">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <style>
+        .legal-page {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .legal-page h2 {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+        }
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .legal-section {
+            margin-bottom: 2rem;
+        }
+        .legal-section h3 {
+            color: var(--accent-green);
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .legal-section h4 {
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .legal-section p, .legal-section li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        .legal-section ul {
+            padding-left: 1.5rem;
+        }
+        .legal-section a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        .legal-section a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script src="/static/session.js"></script>
+</body>
+</html>

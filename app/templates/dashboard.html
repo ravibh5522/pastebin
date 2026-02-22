@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - {{ user.username }}</title>
+    <title>Dashboard – {{ user.username }} | Paste Shaver</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/style.css">
@@ -11,7 +11,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <h1 class="logo">
+                <a href="/">
+                    <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28" style="vertical-align:middle;margin-right:.35rem;">
+                        <defs><linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#7aa2f7"/><stop offset="100%" style="stop-color:#bb9af7"/></linearGradient></defs>
+                        <rect width="32" height="32" rx="7" fill="url(#dg)"/>
+                        <rect x="8" y="9" width="16" height="2" rx="1" fill="white"/>
+                        <rect x="8" y="14" width="12" height="2" rx="1" fill="white" opacity=".85"/>
+                        <rect x="8" y="19" width="10" height="2" rx="1" fill="white" opacity=".7"/>
+                        <rect x="20" y="18" width="4" height="7" rx="1" fill="#f7768e"/>
+                        <rect x="20" y="16" width="4" height="3" rx="1" fill="#ff9e64"/>
+                    </svg>Paste Shaver
+                </a>
+            </h1>
             <div class="actions">
                 <span class="user-info">Hello, {{ user.username }}</span>
                 <a href="/chat" class="button secondary">Chat</a>
@@ -21,23 +33,18 @@
                 </form>
             </div>
         </div>
-        
+
         <div class="search-section">
             <form method="get" action="/search" class="search-form">
                 <div class="search-container">
-                    <input 
-                        type="text" 
-                        name="q" 
-                        placeholder="Search all pastes globally..." 
-                        value="{{ search_query }}"
-                        class="search-input"
-                    >
+                    <input type="text" name="q" placeholder="Search all pastes globally..."
+                        value="{{ search_query }}" class="search-input">
                     <button type="submit" class="search-button">Global Search</button>
                     <a href="/search" class="browse-all">Browse All</a>
                 </div>
             </form>
         </div>
-        
+
         {% if search_query and all_search_results %}
         <div class="global-search-results">
             <h3>Global Search Results for "{{ search_query }}"</h3>
@@ -47,425 +54,478 @@
                     <div class="paste-header">
                         <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
                         <div class="paste-meta">
-                            {% if paste.owner %}
-                                <span class="paste-owner">by {{ paste.owner.username }}</span>
-                            {% else %}
-                                <span class="paste-owner">by Anonymous</span>
-                            {% endif %}
+                            {% if paste.owner %}<span class="paste-owner">by {{ paste.owner.username }}</span>{% else %}<span class="paste-owner">by Anonymous</span>{% endif %}
                             <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                         </div>
                     </div>
                     <div class="paste-preview">
-                        {% if paste.content %}
-                            <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
-                        {% endif %}
-                        {% if paste.filenames %}
-                            <div class="file-count">
-                                📎 {{ paste.filenames.split(',') | length }} file(s)
-                            </div>
-                        {% endif %}
+                        {% if paste.content %}<pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>{% endif %}
+                        {% if paste.filenames %}<div class="file-count">📎 {{ paste.filenames.split(',') | length }} file(s)</div>{% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            <div class="view-all-results">
-                <a href="/search?q={{ search_query }}" class="button">View All Results</a>
-            </div>
+            <div class="view-all-results"><a href="/search?q={{ search_query }}" class="button">View All Results</a></div>
         </div>
         {% endif %}
-        
-        <div class="dashboard-content">
-            <div class="dashboard-section">
-                <h2>
-                    {% if search_query %}
-                        My Pastes - Search Results for "{{ search_query }}"
-                    {% else %}
-                        My Pastes
-                    {% endif %}
-                </h2>
-                {% if user_pastes %}
-                    <div class="paste-grid">
-                        {% for paste in user_pastes %}
-                        <div class="paste-card {% if paste.is_private %}private{% endif %}">
-                            <div class="paste-header">
-                                <a href="/{{ paste.slug }}" class="paste-title">
-                                    {% if paste.is_private %}<span class="private-icon">🔒</span>{% endif %}
-                                    {{ paste.slug }}
-                                </a>
-                                <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                            </div>
-                            <div class="paste-preview">
-                                {% if paste.is_private %}
-                                    <div class="encrypted-notice">🔐 Encrypted content</div>
-                                {% elif paste.content %}
-                                    <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
-                                {% endif %}
-                                {% if paste.filenames %}
-                                    <div class="file-count">
-                                        📎 {{ paste.filenames.split(',') | length }} file(s)
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        {% if search_query %}
-                            <p>No pastes found matching "{{ search_query }}".</p>
-                            <a href="/dashboard" class="button">View All Pastes</a>
-                        {% else %}
-                            <p>You haven't created any pastes yet.</p>
-                            <a href="/" class="button">Create Your First Paste</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
+
+        <!-- ── Global view toggle ─────────────────────── -->
+        <div class="global-toolbar">
+            <div id="bulk-bar-my" class="bulk-bar" style="display:none;">
+                <span id="bulk-count-my" class="bulk-count">0 selected</span>
+                <button class="button small danger" onclick="bulkDelete('my')">🗑 Delete Selected</button>
+                <button class="button small secondary" onclick="bulkExport('my')">⬇ Export ZIP</button>
+                <button class="button small secondary" onclick="clearSelection('my')">✕ Cancel</button>
             </div>
-            
-            <div class="dashboard-section">
-                <h2>
-                    {% if search_query %}
-                        Saved Pastes - Search Results for "{{ search_query }}"
-                    {% else %}
-                        Saved Pastes
-                    {% endif %}
-                </h2>
-                {% if saved_pastes %}
-                    <div class="paste-grid">
-                        {% for saved_paste in saved_pastes %}
-                        {% set paste = saved_paste.paste %}
-                        <div class="paste-card">
-                            <div class="paste-header">
-                                <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
-                                <div class="paste-meta">
-                                    {% if paste.owner %}
-                                        <span class="paste-owner">by {{ paste.owner.username }}</span>
-                                    {% else %}
-                                        <span class="paste-owner">by Anonymous</span>
-                                    {% endif %}
-                                    <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d') }}</span>
-                                </div>
-                            </div>
-                            <div class="paste-preview">
-                                {% if paste.content %}
-                                    <pre>{{ paste.content[:100] }}{% if paste.content|length > 100 %}...{% endif %}</pre>
-                                {% endif %}
-                                {% if paste.filenames %}
-                                    <div class="file-count">
-                                        📎 {{ paste.filenames.split(',') | length }} file(s)
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        {% if search_query %}
-                            <p>No saved pastes found matching "{{ search_query }}".</p>
-                            <a href="/dashboard" class="button">View All Saved Pastes</a>
-                        {% else %}
-                            <p>You haven't saved any pastes yet.</p>
-                            <p>Click the save button on any paste to add it to your collection.</p>
-                        {% endif %}
-                    </div>
-                {% endif %}
+            <div class="view-toggle" style="margin-left:auto;">
+                <button class="view-btn" id="grid-btn-all" onclick="setViewAll('grid')" title="Grid view">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+                    <span style="margin-left:.3rem;font-size:.8rem;">Grid</span>
+                </button>
+                <button class="view-btn" id="list-btn-all" onclick="setViewAll('list')" title="List view">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="14" height="2" rx="1"/><rect x="1" y="7" width="14" height="2" rx="1"/><rect x="1" y="12" width="14" height="2" rx="1"/></svg>
+                    <span style="margin-left:.3rem;font-size:.8rem;">List</span>
+                </button>
             </div>
         </div>
-    </div>
+
+        <div class="dashboard-content">
+
+            <!-- ── My Pastes ───────────────────────────────── -->
+            <div class="dashboard-section" id="my-pastes-section">
+                <div class="section-toolbar">
+                    <h2>{% if search_query %}My Pastes — "{{ search_query }}"{% else %}My Pastes{% endif %}</h2>
+                </div>
+
+                {% if user_pastes %}
+                <div class="paste-grid" id="paste-container-my">
+                    {% for paste in user_pastes %}
+                    <div class="paste-card {% if paste.is_private %}private{% endif %}" data-slug="{{ paste.slug }}">
+                        <input type="checkbox" class="paste-checkbox" onchange="onCheckChange('my')" title="Select">
+                        <div class="paste-header">
+                            <a href="/{{ paste.slug }}" class="paste-title">
+                                {% if paste.is_private %}<span class="private-icon">🔒</span>{% endif %}{{ paste.slug }}
+                            </a>
+                            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+                                <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d') }}</span>
+                                <div class="dot-menu-wrap">
+                                    <button class="dot-btn" onclick="toggleMenu(this)" title="Options">⋮</button>
+                                    <div class="dot-dropdown">
+                                        <a href="/{{ paste.slug }}">Open</a>
+                                        <button onclick="copyLink('/{{ paste.slug }}', this)">Copy Link</button>
+                                        <button class="danger" onclick="deleteSingle('{{ paste.slug }}', this)">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="paste-preview">
+                            {% if paste.is_private %}
+                                <div class="encrypted-notice">🔐 Encrypted content</div>
+                            {% elif paste.content %}
+                                <pre>{{ paste.content[:120] }}{% if paste.content|length > 120 %}...{% endif %}</pre>
+                            {% endif %}
+                            {% if paste.filenames %}<div class="file-count">📎 {{ paste.filenames.split(',') | length }} file(s)</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    {% if search_query %}
+                        <p>No pastes found matching "{{ search_query }}".</p>
+                        <a href="/dashboard" class="button">View All Pastes</a>
+                    {% else %}
+                        <p>You haven't created any pastes yet.</p>
+                        <a href="/" class="button">Create Your First Paste</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── Saved Pastes ─────────────────────────────── -->
+            <div class="dashboard-section" id="saved-pastes-section">
+                <div class="section-toolbar">
+                    <h2>{% if search_query %}Saved Pastes — "{{ search_query }}"{% else %}Saved Pastes{% endif %}</h2>
+                </div>
+
+                {% if saved_pastes %}
+                <div class="paste-grid" id="paste-container-saved">
+                    {% for saved_paste in saved_pastes %}
+                    {% set paste = saved_paste.paste %}
+                    <div class="paste-card" data-slug="{{ paste.slug }}">
+                        <div class="paste-header">
+                            <a href="/{{ paste.slug }}" class="paste-title">{{ paste.slug }}</a>
+                            <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+                                <div class="paste-meta" style="text-align:right;">
+                                    {% if paste.owner %}<span class="paste-owner">by {{ paste.owner.username }}</span>{% else %}<span class="paste-owner">by Anonymous</span>{% endif %}
+                                    <span class="paste-date">{{ paste.created_at.strftime('%Y-%m-%d') }}</span>
+                                </div>
+                                <div class="dot-menu-wrap">
+                                    <button class="dot-btn" onclick="toggleMenu(this)" title="Options">⋮</button>
+                                    <div class="dot-dropdown">
+                                        <a href="/{{ paste.slug }}">Open</a>
+                                        <button onclick="copyLink('/{{ paste.slug }}', this)">Copy Link</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="paste-preview">
+                            {% if paste.content %}<pre>{{ paste.content[:120] }}{% if paste.content|length > 120 %}...{% endif %}</pre>{% endif %}
+                            {% if paste.filenames %}<div class="file-count">📎 {{ paste.filenames.split(',') | length }} file(s)</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    {% if search_query %}
+                        <p>No saved pastes found matching "{{ search_query }}".</p>
+                        <a href="/dashboard" class="button">View All Saved Pastes</a>
+                    {% else %}
+                        <p>You haven't saved any pastes yet.</p>
+                        <p>Click the save button on any paste to add it to your collection.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+        </div><!-- /dashboard-content -->
+    </div><!-- /container -->
+
+    <!-- DMCA / Legal Footer -->
+    <footer class="dashboard-legal-footer">
+        <div class="dlf-inner">
+            <span>⚠️ <strong>DMCA:</strong> To report copyright-infringing content,
+                <a href="/dmca">submit a takedown request here</a>.
+                We process valid requests within 24–48 hours.</span>
+            <div class="dlf-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/dmca">DMCA</a>
+                <a href="/terms">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
 
     <style>
-        .dashboard-content {
-            margin-top: 2rem;
+        /* ── Sticky-footer flex layout ────────────────────── */
+        html { height: 100%; }
+        body { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 0; }
+        body > .container { flex: 1; }
+
+        /* Logo icon alignment */
+        .logo a { display: inline-flex; align-items: center; }
+
+        /* ── Layout ─────────────────────────────────────── */
+        .dashboard-content { margin-top: 1rem; }
+        .dashboard-section { margin-bottom: 3rem; }
+
+        .global-toolbar {
+            display: flex; align-items: center; justify-content: flex-end;
+            gap: .75rem; flex-wrap: wrap; padding: .6rem 0; margin-bottom: .5rem;
+            border-bottom: 1px solid var(--border-color);
         }
-        
-        .search-section {
-            margin: 2rem 0;
+
+        .section-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.25rem; border-bottom: 2px solid var(--border-color);
+            padding-bottom: .5rem; gap: 1rem; flex-wrap: wrap;
         }
-        
-        .search-form {
-            width: 100%;
-        }
-        
-        .search-container {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            max-width: 600px;
-        }
-        
+        .section-toolbar h2 { margin: 0; color: var(--text-primary); }
+        .toolbar-right { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+        /* ── Search ─────────────────────────────────────── */
+        .search-section { margin: 2rem 0; }
+        .search-form { width: 100%; }
+        .search-container { display: flex; gap: 1rem; align-items: center; max-width: 600px; }
         .search-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--surface-color);
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: border-color 0.2s ease;
+            flex: 1; padding: .75rem 1rem; border: 2px solid var(--border-color);
+            border-radius: 8px; background: var(--surface-color); color: var(--text-primary);
+            font-size: 1rem; transition: border-color .2s;
         }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-        }
-        
-        .search-input::placeholder {
-            color: var(--text-secondary);
-        }
-        
+        .search-input:focus { outline: none; border-color: var(--accent-blue); }
+        .search-input::placeholder { color: var(--text-secondary); }
         .search-button {
-            padding: 0.75rem 1.5rem;
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
+            padding: .75rem 1.5rem; background: var(--accent-blue); color: white;
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 500;
+            cursor: pointer; transition: background-color .2s;
         }
-        
-        .search-button:hover {
-            background: #0056b3;
-        }
-        
-        .clear-search {
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            transition: background-color 0.2s ease;
-        }
-        
-        .clear-search:hover {
-            background: var(--border-color);
-            color: var(--text-primary);
-        }
-        
+        .search-button:hover { background: #0056b3; }
         .browse-all {
-            color: var(--accent-blue);
-            text-decoration: none;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            transition: background-color 0.2s ease;
-            white-space: nowrap;
+            color: var(--accent-blue); text-decoration: none;
+            padding: .75rem 1rem; border-radius: 6px; transition: background-color .2s; white-space: nowrap;
         }
-        
-        .browse-all:hover {
-            background: var(--border-color);
-        }
-        
+        .browse-all:hover { background: var(--border-color); }
         .global-search-results {
-            margin: 2rem 0;
-            padding: 2rem;
-            background: var(--surface-color);
-            border-radius: 8px;
-            border: 2px solid var(--accent-blue);
+            margin: 2rem 0; padding: 2rem; background: var(--surface-color);
+            border-radius: 8px; border: 2px solid var(--accent-blue);
         }
-        
         .global-search-results h3 {
-            color: var(--text-primary);
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
+            color: var(--text-primary); margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color); padding-bottom: .5rem;
         }
-        
-        .view-all-results {
-            text-align: center;
-            margin-top: 2rem;
+        .view-all-results { text-align: center; margin-top: 2rem; }
+
+        /* ── View toggle ─────────────────────────────────── */
+        .view-toggle { display: flex; gap: 2px; }
+        .view-btn {
+            background: var(--surface-color); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: .35rem .55rem; cursor: pointer;
+            color: var(--text-secondary); transition: all .15s; line-height: 1;
         }
-        
-        .dashboard-section {
-            margin-bottom: 3rem;
+        .view-btn:hover, .view-btn.active {
+            background: var(--accent-blue); color: white; border-color: var(--accent-blue);
         }
-        
-        .dashboard-section h2 {
-            color: var(--text-primary);
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
+
+        /* ── Bulk bar ─────────────────────────────────────── */
+        .bulk-bar {
+            display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+            background: rgba(88,166,255,.08); border: 1px solid var(--accent-blue);
+            border-radius: 8px; padding: .4rem .75rem;
         }
-        
+        .bulk-count { font-size: .85rem; color: var(--text-secondary); margin-right: .25rem; }
+        .button.small { padding: .35rem .85rem; font-size: .8rem; }
+        .button.danger { background: #da3633 !important; border-color: #da3633 !important; color: white; }
+        .button.danger:hover { background: #b91c1c !important; }
+
+        /* ── Paste grid / list ──────────────────────────── */
         .paste-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;
         }
-        
+        .paste-grid.list-mode { display: flex; flex-direction: column; gap: .5rem; }
+        .paste-grid.list-mode .paste-card {
+            display: flex; flex-direction: row; align-items: center;
+            padding: .65rem 1rem; gap: 1rem;
+        }
+        .paste-grid.list-mode .paste-card .paste-checkbox { flex-shrink: 0; }
+        .paste-grid.list-mode .paste-card .paste-header { flex: 1; margin-bottom: 0; min-width: 0; }
+        .paste-grid.list-mode .paste-card .paste-preview { display: none; }
+
+        /* ── Paste card ──────────────────────────────────── */
         .paste-card {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: var(--surface-color); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1.25rem 1.25rem 1rem;
+            transition: transform .2s, box-shadow .2s; position: relative;
         }
-        
-        .paste-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .paste-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-        
-        .paste-title {
-            color: var(--accent-blue);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        
-        .paste-title:hover {
-            text-decoration: underline;
-        }
-        
-        .paste-date {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-        
-        .paste-meta {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.25rem;
-        }
-        
-        .paste-owner {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-        
-        .paste-preview {
-            color: var(--text-secondary);
-        }
-        
-        .paste-preview pre {
-            font-size: 0.85rem;
-            margin: 0;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        
-        .file-count {
-            margin-top: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--accent-green);
-        }
-        
-        /* Private paste styles */
+        .paste-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+        .paste-card.selected { border-color: var(--accent-blue); background: rgba(88,166,255,.06); }
         .paste-card.private {
             border-color: var(--accent-purple);
-            background: linear-gradient(135deg, var(--surface-color) 0%, rgba(187, 154, 247, 0.05) 100%);
+            background: linear-gradient(135deg, var(--surface-color) 0%, rgba(187,154,247,.05) 100%);
         }
-        
-        .private-icon {
-            margin-right: 0.25rem;
+
+        /* Checkbox */
+        .paste-checkbox {
+            position: absolute; top: .85rem; left: .85rem;
+            width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-blue);
+            opacity: 0; transition: opacity .15s; z-index: 2;
         }
-        
-        .encrypted-notice {
-            color: var(--accent-purple);
-            font-style: italic;
-            font-size: 0.9rem;
+        .paste-card:hover .paste-checkbox,
+        .paste-card.selected .paste-checkbox { opacity: 1; }
+
+        .paste-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: .75rem; gap: .5rem; min-width: 0;
         }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--text-secondary);
+        .paste-title {
+            color: var(--accent-blue); text-decoration: none; font-weight: 600;
+            font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        
-        .empty-state p {
-            margin-bottom: 1rem;
+        .paste-title:hover { text-decoration: underline; }
+        .paste-date { color: var(--text-secondary); font-size: .82rem; white-space: nowrap; }
+        .paste-meta { display: flex; flex-direction: column; align-items: flex-end; gap: .15rem; }
+        .paste-owner { color: var(--text-secondary); font-size: .82rem; }
+        .paste-preview { color: var(--text-secondary); }
+        .paste-preview pre { font-size: .82rem; margin: 0; white-space: pre-wrap; word-break: break-word; }
+        .file-count { margin-top: .4rem; font-size: .82rem; color: var(--accent-green); }
+        .encrypted-notice { color: var(--accent-purple); font-style: italic; font-size: .88rem; }
+        .private-icon { margin-right: .2rem; }
+
+        /* ── 3-dot menu ──────────────────────────────────── */
+        .dot-menu-wrap { position: relative; }
+        .dot-btn {
+            background: none; border: 1px solid transparent; border-radius: 6px;
+            color: var(--text-secondary); cursor: pointer; font-size: 1.15rem;
+            line-height: 1; padding: .15rem .4rem; transition: all .15s;
         }
-        
-        .user-info {
-            color: var(--text-primary);
-            margin-right: 1rem;
-            font-weight: 500;
+        .dot-btn:hover { background: var(--border-color); color: var(--text-primary); }
+        /* Elevate the hovered card so its dropdown sits above sibling cards */
+        .paste-card:hover, .paste-card:focus-within { z-index: 10; }
+        .dot-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 4px);
+            background: var(--surface-color); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: .35rem; min-width: 140px; z-index: 9999;
+            box-shadow: 0 6px 20px rgba(0,0,0,.35);
         }
-        
-        .logout {
-            background: #ff757f !important;
-            border-color: #ff757f !important;
+        .dot-dropdown.open { display: block; }
+        .dot-dropdown a, .dot-dropdown button {
+            display: block; width: 100%; text-align: left;
+            padding: .45rem .75rem; border: none; background: none;
+            color: var(--text-primary); text-decoration: none; font-size: .9rem;
+            border-radius: 5px; cursor: pointer; transition: background .12s;
         }
-        
-        .logout:hover {
-            background: #ff6b75 !important;
+        .dot-dropdown a:hover, .dot-dropdown button:hover { background: var(--border-color); }
+        .dot-dropdown button.danger { color: #ff6b6b; }
+        .dot-dropdown button.danger:hover { background: rgba(218,54,51,.15); }
+
+        /* ── Misc ────────────────────────────────────────── */
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+        .empty-state p { margin-bottom: 1rem; }
+        .user-info { color: var(--text-primary); margin-right: 1rem; font-weight: 500; }
+        .logout { background: #ff757f !important; border-color: #ff757f !important; }
+        .logout:hover { background: #ff6b75 !important; }
+
+        /* Footer — sticks to bottom when content is short */
+        .dashboard-legal-footer {
+            margin-top: auto; padding: 1.25rem 0;
+            border-top: 1px solid var(--border-color);
         }
-        
+        .dlf-inner {
+            display: flex; flex-wrap: wrap; justify-content: space-between;
+            align-items: center; gap: 1rem; font-size: .85rem; color: var(--text-secondary);
+        }
+        .dlf-inner a { color: var(--accent-blue); text-decoration: none; }
+        .dlf-inner a:hover { text-decoration: underline; }
+        .dlf-links { display: flex; gap: 1.5rem; }
+
+        /* ── Responsive ─────────────────────────────────── */
         @media (max-width: 768px) {
-            .header .actions {
-                flex-direction: column;
-                gap: 0.5rem;
-                align-items: flex-end;
-            }
-            
-            .search-container {
-                flex-direction: column;
-                max-width: none;
-            }
-            
-            .search-input {
-                width: 100%;
-            }
-            
-            .search-button, .browse-all {
-                width: 100%;
-                text-align: center;
-            }
-            
-            .paste-header {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .paste-meta {
-                align-items: flex-start;
-            }
+            .header .actions { flex-direction: column; gap: .5rem; align-items: flex-end; }
+            .search-container { flex-direction: column; max-width: none; }
+            .search-input, .search-button, .browse-all { width: 100%; text-align: center; }
+            .paste-grid { grid-template-columns: 1fr; }
+            .section-toolbar { flex-direction: column; align-items: flex-start; }
+            .global-toolbar { justify-content: flex-start; }
         }
     </style>
-    
+
     <script src="/static/session.js"></script>
     <script>
-        // Enhanced search functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.querySelector('.search-input');
-            
-            // Focus search with Ctrl+F or Cmd+F
-            document.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
-                
-                // Clear search with Escape when focused on search input
-                if (e.key === 'Escape' && document.activeElement === searchInput) {
-                    if (searchInput.value) {
-                        searchInput.value = '';
-                        // Submit form to clear results
-                        searchInput.closest('form').submit();
-                    }
-                }
-            });
-            
-            // Auto-submit search after typing stops (debounced)
-            let searchTimeout;
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    // Auto-submit if there's content or if clearing
-                    if (this.value.trim().length >= 2 || this.value.trim().length === 0) {
-                        this.closest('form').submit();
-                    }
-                }, 300);
-            });
+    /* ── View toggle — single global control ────────────── */
+    function setViewAll(mode) {
+        ['my','saved'].forEach(s => {
+            const c = document.getElementById('paste-container-' + s);
+            if (c) c.classList.toggle('list-mode', mode === 'list');
         });
+        document.getElementById('grid-btn-all').classList.toggle('active', mode !== 'list');
+        document.getElementById('list-btn-all').classList.toggle('active', mode === 'list');
+        localStorage.setItem('db-view-all', mode);
+    }
+    function initViews() {
+        setViewAll(localStorage.getItem('db-view-all') || 'grid');
+    }
+
+    /* ── 3-dot menu ───────────────────────────────────────── */
+    function toggleMenu(btn) {
+        const dd = btn.nextElementSibling;
+        const wasOpen = dd.classList.contains('open');
+        document.querySelectorAll('.dot-dropdown.open').forEach(el => el.classList.remove('open'));
+        if (!wasOpen) dd.classList.add('open');
+    }
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.dot-menu-wrap'))
+            document.querySelectorAll('.dot-dropdown.open').forEach(el => el.classList.remove('open'));
+    });
+
+    async function copyLink(path, btn) {
+        const url = location.origin + path;
+        try {
+            await navigator.clipboard.writeText(url);
+            const orig = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        } catch { prompt('Copy this link:', url); }
+        btn.closest('.dot-dropdown').classList.remove('open');
+    }
+
+    async function deleteSingle(slug, btn) {
+        if (!confirm(`Delete paste "${slug}"?\nThis cannot be undone.`)) return;
+        btn.closest('.dot-dropdown').classList.remove('open');
+        const res = await fetch('/paste/' + slug, { method: 'DELETE' });
+        if (res.ok) {
+            const card = btn.closest('.paste-card');
+            card.style.transition = 'opacity .3s';
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 320);
+        } else {
+            const d = await res.json().catch(() => ({}));
+            alert('Delete failed: ' + (d.detail || res.statusText));
+        }
+    }
+
+    /* ── Checkboxes & bulk actions ────────────────────────── */
+    function getSelected(section) {
+        return [...document.querySelectorAll(`#paste-container-${section} .paste-card.selected`)]
+            .map(c => c.dataset.slug);
+    }
+    function onCheckChange(section) {
+        document.querySelectorAll(`#paste-container-${section} .paste-card`).forEach(card => {
+            const cb = card.querySelector('.paste-checkbox');
+            card.classList.toggle('selected', cb && cb.checked);
+        });
+        updateBulkBar(section);
+    }
+    function updateBulkBar(section) {
+        const n = getSelected(section).length;
+        const bar = document.getElementById('bulk-bar-' + section);
+        if (!bar) return;
+        bar.style.display = n > 0 ? 'flex' : 'none';
+        const cnt = document.getElementById('bulk-count-' + section);
+        if (cnt) cnt.textContent = n + ' selected';
+    }
+    function clearSelection(section) {
+        document.querySelectorAll(`#paste-container-${section} .paste-card`).forEach(card => {
+            const cb = card.querySelector('.paste-checkbox');
+            if (cb) cb.checked = false;
+            card.classList.remove('selected');
+        });
+        updateBulkBar(section);
+    }
+    async function bulkDelete(section) {
+        const slugs = getSelected(section);
+        if (!slugs.length) return;
+        if (!confirm(`Delete ${slugs.length} paste(s)?\nThis cannot be undone.`)) return;
+        const res = await fetch('/paste/bulk-delete', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({slugs})
+        });
+        if (res.ok) {
+            slugs.forEach(slug => {
+                const card = document.querySelector(`#paste-container-${section} [data-slug="${slug}"]`);
+                if (card) { card.style.transition = 'opacity .3s'; card.style.opacity = '0'; setTimeout(() => card.remove(), 320); }
+            });
+            clearSelection(section);
+        } else {
+            const d = await res.json().catch(() => ({}));
+            alert('Delete failed: ' + (d.detail || res.statusText));
+        }
+    }
+    function bulkExport(section) {
+        const slugs = getSelected(section);
+        if (!slugs.length) return;
+        window.location.href = '/paste/export-zip?slugs=' + encodeURIComponent(slugs.join(','));
+    }
+
+    /* ── Search (debounced) ───────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        initViews();
+        const si = document.querySelector('.search-input');
+        if (!si) return;
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); si.focus(); }
+            if (e.key === 'Escape' && document.activeElement === si && si.value) {
+                si.value = ''; si.closest('form').submit();
+            }
+        });
+        let t;
+        si.addEventListener('input', function() {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                if (this.value.trim().length >= 2 || this.value.trim().length === 0)
+                    this.closest('form').submit();
+            }, 300);
+        });
+    });
     </script>
 </body>
 </html>

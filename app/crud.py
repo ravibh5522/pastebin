@@ -102,6 +102,27 @@ def get_user_pastes(db: Session, user_id: int):
     """Get all pastes created by a user"""
     return db.query(models.Paste).filter(models.Paste.user_id == user_id).order_by(models.Paste.created_at.desc()).all()
 
+def delete_paste_by_slug(db: Session, slug: str, user_id: int) -> bool:
+    """Delete a paste owned by the given user. Returns True on success, False if not found/unauthorized."""
+    paste = db.query(models.Paste).filter(
+        and_(models.Paste.slug == slug, models.Paste.user_id == user_id)
+    ).first()
+    if not paste:
+        return False
+    # Remove associated saved-paste entries first
+    db.query(models.SavedPaste).filter(models.SavedPaste.paste_id == paste.id).delete()
+    db.delete(paste)
+    db.commit()
+    return True
+
+def bulk_delete_pastes(db: Session, slugs: list, user_id: int) -> int:
+    """Delete multiple pastes owned by the given user. Returns count of deleted pastes."""
+    deleted = 0
+    for slug in slugs:
+        if delete_paste_by_slug(db, slug, user_id):
+            deleted += 1
+    return deleted
+
 def search_user_pastes(db: Session, user_id: int, search_query: str):
     """Search through user's pastes by slug or content"""
     if not search_query.strip():

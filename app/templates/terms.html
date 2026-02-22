@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - Paste Shaver</title>
+    <meta name="description" content="Paste Shaver Terms of Service. Rules and guidelines for using our free encrypted pastebin and code sharing service.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><a href="/">Paste Shaver</a></h1>
+            <div class="actions">
+                <a href="/search" class="button secondary">Search</a>
+                {% if current_user %}
+                    <a href="/dashboard" class="button secondary">Dashboard</a>
+                {% else %}
+                    <a href="/login" class="button secondary">Login</a>
+                    <a href="/signup" class="button">Sign Up</a>
+                {% endif %}
+                <a href="/" class="button">New Paste</a>
+            </div>
+        </div>
+
+        <div class="legal-page">
+            <h2>Terms of Service</h2>
+            <p class="last-updated">Last updated: February 22, 2026</p>
+
+            <section class="legal-section">
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing or using Paste Shaver ("Service"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>2. Permitted Use</h3>
+                <p>You may use Paste Shaver to share text, code, and files for lawful purposes. You are responsible for all content you post. You agree not to use the Service to:</p>
+                <ul>
+                    <li>Post illegal, harmful, threatening, abusive, or defamatory content</li>
+                    <li>Infringe on intellectual property rights of others</li>
+                    <li>Post malware, viruses, exploits, or malicious scripts</li>
+                    <li>Distribute spam or unsolicited commercial messages</li>
+                    <li>Post personally identifiable information of others without consent (doxing)</li>
+                    <li>Attempt to gain unauthorized access to other accounts or systems</li>
+                    <li>Overload or abuse the service infrastructure</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h3>3. Content Ownership</h3>
+                <p>You retain ownership of content you post. By posting, you grant Paste Shaver a non-exclusive, royalty-free license to store, display, and serve the content to provide the Service. Public pastes may be indexed by search engines.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>4. Content Removal</h3>
+                <p>We reserve the right to remove content that violates these terms or applicable law, without notice. We respond to valid DMCA takedown requests per our <a href="/dmca">DMCA Policy</a>.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>5. Account Termination</h3>
+                <p>We reserve the right to suspend or terminate accounts that violate these Terms, at our sole discretion, with or without notice.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>6. Disclaimer of Warranties</h3>
+                <p>The Service is provided "as is" without warranties of any kind, express or implied. We do not guarantee uninterrupted availability or that the Service is free from errors.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>7. Limitation of Liability</h3>
+                <p>Paste Shaver is not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>8. Privacy</h3>
+                <p>Your use of the Service is also governed by our <a href="/privacy">Privacy Policy</a>.</p>
+            </section>
+
+            <section class="legal-section">
+                <h3>9. Changes to Terms</h3>
+                <p>We may revise these Terms at any time. Continued use of the Service constitutes acceptance of updated Terms.</p>
+            </section>
+        </div>
+
+        <footer class="site-footer" style="margin-top: 3rem;">
+            <div class="container">
+                <div class="footer-bottom">
+                    <p>&copy; 2024-2026 Paste Shaver. &nbsp;
+                       <a href="/privacy">Privacy Policy</a> &nbsp;|&nbsp;
+                       <a href="/dmca">DMCA</a> &nbsp;|&nbsp;
+                       <a href="/terms">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <style>
+        .legal-page {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--surface-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .legal-page h2 { font-size: 2rem; color: var(--accent-blue); margin-bottom: 0.5rem; }
+        .last-updated { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+        .legal-section { margin-bottom: 2rem; }
+        .legal-section h3 {
+            color: var(--accent-green);
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .legal-section p, .legal-section li { color: var(--text-secondary); line-height: 1.8; }
+        .legal-section ul { padding-left: 1.5rem; }
+        .legal-section a { color: var(--accent-blue); text-decoration: none; }
+        .legal-section a:hover { text-decoration: underline; }
+    </style>
+    <script src="/static/session.js"></script>
+</body>
+</html>

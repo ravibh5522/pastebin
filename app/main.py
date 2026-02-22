@@ -335,6 +335,9 @@ def sitemap_xml(request: Request, db: Session = Depends(get_db)):
         {"loc": "/search", "priority": "0.8", "changefreq": "daily"},
         {"loc": "/login", "priority": "0.6", "changefreq": "monthly"},
         {"loc": "/signup", "priority": "0.6", "changefreq": "monthly"},
+        {"loc": "/privacy", "priority": "0.4", "changefreq": "monthly"},
+        {"loc": "/dmca", "priority": "0.4", "changefreq": "monthly"},
+        {"loc": "/terms", "priority": "0.4", "changefreq": "monthly"},
     ]
     
     # Get recent public (non-private) pastes for sitemap
@@ -365,6 +368,21 @@ def sitemap_xml(request: Request, db: Session = Depends(get_db)):
     xml_content += '</urlset>'
     
     return Response(content=xml_content, media_type="application/xml")
+
+# --- Legal / SEO pages ---
+@app.get("/privacy", response_class=HTMLResponse)
+@app.get("/privacy-policy", response_class=HTMLResponse)
+def privacy_policy(request: Request, current_user=Depends(get_current_user_from_request)):
+    return templates.TemplateResponse("privacy.html", {"request": request, "current_user": current_user})
+
+@app.get("/dmca", response_class=HTMLResponse)
+def dmca_page(request: Request, current_user=Depends(get_current_user_from_request)):
+    return templates.TemplateResponse("dmca.html", {"request": request, "current_user": current_user})
+
+@app.get("/terms", response_class=HTMLResponse)
+@app.get("/terms-of-service", response_class=HTMLResponse)
+def terms_of_service(request: Request, current_user=Depends(get_current_user_from_request)):
+    return templates.TemplateResponse("terms.html", {"request": request, "current_user": current_user})
 
 @app.post("/logout")
 def logout():
@@ -1165,6 +1183,94 @@ def admin_reset_password(
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"status": "success", "message": "Password reset successfully"}
+
+# ── Paste management API (must be before /{slug} catch-all) ──────────────────
+
+class BulkDeleteRequest(BaseModel):
+    slugs: List[str]
+
+@app.delete("/paste/{slug}")
+def delete_paste(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_from_request)
+):
+    """Delete a single paste owned by the current user."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    # Remove files from disk first
+    paste_dir = UPLOADS_DIR / slug
+    if paste_dir.exists():
+        shutil.rmtree(paste_dir)
+    success = crud.delete_paste_by_slug(db, slug, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Paste not found or not yours")
+    return {"status": "ok", "deleted": slug}
+
+@app.post("/paste/bulk-delete")
+def bulk_delete_pastes(
+    payload: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_from_request)
+):
+    """Delete multiple pastes owned by the current user."""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    for slug in payload.slugs:
+        paste_dir = UPLOADS_DIR / slug
+        if paste_dir.exists():
+            shutil.rmtree(paste_dir)
+    count = crud.bulk_delete_pastes(db, payload.slugs, current_user.id)
+    return {"status": "ok", "deleted": count}
+
+@app.get("/paste/export-zip")
+def export_pastes_zip(
+    slugs: str,   # comma-separated slugs
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_from_request)
+):
+    """Export one or more pastes (owned by current user) as a ZIP file."""
+    import io, zipfile as _zipfile
+    from fastapi.responses import StreamingResponse
+
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    slug_list = [s.strip() for s in slugs.split(",") if s.strip()]
+    if not slug_list:
+        raise HTTPException(status_code=400, detail="No slugs provided")
+
+    buf = io.BytesIO()
+    with _zipfile.ZipFile(buf, "w", _zipfile.ZIP_DEFLATED) as zf:
+        for slug in slug_list:
+            paste = crud.get_paste_by_slug(db, slug)
+            if not paste or paste.user_id != current_user.id:
+                continue
+            folder = slug + "/"
+            # Text content
+            if paste.content:
+                zf.writestr(folder + "content.txt", paste.content)
+            # Metadata
+            meta = (
+                f"slug: {paste.slug}\n"
+                f"created: {paste.created_at.isoformat()}\n"
+                f"private: {paste.is_private}\n"
+                f"expires: {paste.expires_at.isoformat() if paste.expires_at else 'never'}\n"
+            )
+            zf.writestr(folder + "meta.txt", meta)
+            # Attached files
+            paste_dir = UPLOADS_DIR / slug
+            if paste_dir.exists():
+                for fpath in paste_dir.iterdir():
+                    zf.write(fpath, folder + fpath.name)
+
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=pastes-export.zip"}
+    )
+
 
 @app.get("/{slug}", response_class=HTMLResponse)
 def view_paste(
