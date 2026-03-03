@@ -12,13 +12,13 @@
     <meta property="og:type" content="article">
     <meta property="og:title" content="Paste {{ paste.slug }} - Paste Shaver">
     <meta property="og:description" content="{% if paste.content %}{{ paste.content[:150] | replace('\n', ' ') }}{% else %}View this paste on Paste Shaver.{% endif %}">
-    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:url" content="https://{{ request.url.netloc }}{{ request.url.path }}">
     <meta property="og:site_name" content="Paste Shaver">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Paste {{ paste.slug }} - Paste Shaver">
     <meta name="twitter:description" content="{% if paste.content %}{{ paste.content[:120] | replace('\n', ' ') }}{% else %}View this paste on Paste Shaver.{% endif %}">
     {% endif %}
-    <link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}/{{ paste.slug }}">
+    <link rel="canonical" href="https://{{ request.url.netloc }}/{{ paste.slug }}">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/style.css">
     
